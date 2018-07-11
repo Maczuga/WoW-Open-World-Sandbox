@@ -1863,35 +1863,27 @@ void Pet::HandleAsynchLoadSucceed()
 	if (!owner)
 		return;
 
-	if (GetAsynchLoadType() == PET_LOAD_HANDLE_UNSTABLE_CALLBACK)
-	{
-		if (Player* player = owner->ToPlayer())
-			player->GetSession()->SendStableResult(0x09 /*STABLE_SUCCESS_UNSTABLE*/);
-	}
-	else// if (GetAsynchLoadType() == PET_LOAD_BG_RESURRECT || GetAsynchLoadType() == PET_LOAD_SUMMON_PET || GetAsynchLoadType() == PET_LOAD_SUMMON_DEAD_PET)
-	{
-		// Remove Demonic Sacrifice auras (known pet)
-        Unit::AuraEffectList const& auraClassScripts = owner->GetAuraEffectsByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-        for (Unit::AuraEffectList::const_iterator itr = auraClassScripts.begin(); itr != auraClassScripts.end();)
+	// Remove Demonic Sacrifice auras (known pet)
+    Unit::AuraEffectList const& auraClassScripts = owner->GetAuraEffectsByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
+    for (Unit::AuraEffectList::const_iterator itr = auraClassScripts.begin(); itr != auraClassScripts.end();)
+    {
+        if ((*itr)->GetMiscValue() == 2228)
         {
-            if ((*itr)->GetMiscValue() == 2228)
-            {
-                owner->RemoveAurasDueToSpell((*itr)->GetId());
-                itr = auraClassScripts.begin();
-            }
-            else
-                ++itr;
+            owner->RemoveAurasDueToSpell((*itr)->GetId());
+            itr = auraClassScripts.begin();
         }
+        else
+            ++itr;
+    }
 
-		SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
-		RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
-		if (GetAsynchLoadType() == PET_LOAD_SUMMON_DEAD_PET)
-		{
-			setDeathState(ALIVE);
-			ClearUnitState(uint32(UNIT_STATE_ALL_STATE & ~(UNIT_STATE_POSSESSED))); // xinef: added just in case... some linked auras and so on
-			SetHealth(CountPctFromMaxHealth(15)); // Xinef: well, only two pet reviving spells exist and both revive with 15%
-			SavePetToDB(PET_SAVE_AS_CURRENT, false);
-		}
+	SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
+	RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
+	if (GetAsynchLoadType() == PET_LOAD_SUMMON_DEAD_PET)
+	{
+		setDeathState(ALIVE);
+		ClearUnitState(uint32(UNIT_STATE_ALL_STATE & ~(UNIT_STATE_POSSESSED))); // xinef: added just in case... some linked auras and so on
+		SetHealth(CountPctFromMaxHealth(15)); // Xinef: well, only two pet reviving spells exist and both revive with 15%
+		SavePetToDB(PET_SAVE_AS_CURRENT, false);
 	}
 
 	// xinef: resurrect with full health if resurrected by BG / BF spirit
@@ -1933,11 +1925,7 @@ void Pet::HandleAsynchLoadSucceed()
 
 void Pet::HandleAsynchLoadFailed(AsynchPetSummon* info, Player* player, uint8 asynchLoadType, uint8 loadResult)
 {
-	if (loadResult == PET_LOAD_ERROR && asynchLoadType == PET_LOAD_HANDLE_UNSTABLE_CALLBACK)
-	{
-		player->GetSession()->SendStableResult(0x06 /*STABLE_ERR_STABLE*/);
-	}
-	else if (loadResult == PET_LOAD_NO_RESULT && info && (asynchLoadType == PET_LOAD_SUMMON_PET || asynchLoadType == PET_LOAD_SUMMON_DEAD_PET))
+	if (loadResult == PET_LOAD_NO_RESULT && info && (asynchLoadType == PET_LOAD_SUMMON_PET || asynchLoadType == PET_LOAD_SUMMON_DEAD_PET))
 	{
 		// xinef: petentry == 0 for hunter "call pet" (current pet summoned if any)
 		if (!info->m_entry || !player)

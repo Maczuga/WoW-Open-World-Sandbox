@@ -636,12 +636,10 @@ enum TrinityStrings
     LANG_NPCINFO_SPIRITGUIDE            = 831,
     LANG_NPCINFO_INNKEEPER              = 832,
     LANG_NPCINFO_BANKER                 = 833,
-    LANG_NPCINFO_PETITIONER             = 834,
-    LANG_NPCINFO_TABARDDESIGNER         = 835,
-    LANG_NPCINFO_BATTLEMASTER           = 836,
+
     LANG_NPCINFO_AUCTIONEER             = 837,
     LANG_NPCINFO_STABLEMASTER           = 838,
-    LANG_NPCINFO_GUILD_BANKER           = 839,
+
     LANG_NPCINFO_SPELLCLICK             = 840,
     LANG_NPCINFO_MAILBOX                = 841,
     LANG_NPCINFO_PLAYER_VEHICLE         = 842,

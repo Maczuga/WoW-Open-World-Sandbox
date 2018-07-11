@@ -809,7 +809,7 @@ void WorldSession::HandlePlayerLoginFromDB(LoginQueryHolder* holder)
 	// Xinef: moved this from below
     sObjectAccessor->AddObject(pCurrChar);
 
-    if (!pCurrChar->GetMap()->AddPlayerToMap(pCurrChar) || !pCurrChar->CheckInstanceLoginValid())
+    if (!pCurrChar->GetMap()->AddPlayerToMap(pCurrChar))
     {
         AreaTrigger const* at = sObjectMgr->GetGoBackTrigger(pCurrChar->GetMapId());
         if (at)
@@ -1140,34 +1140,6 @@ void WorldSession::HandleSetFactionCheat(WorldPacket & /*recvData*/)
 {
     sLog->outError("WORLD SESSION: HandleSetFactionCheat, not expected call, please report.");
     GetPlayer()->GetReputationMgr().SendStates();
-}
-
-void WorldSession::HandleTutorialFlag(WorldPacket& recvData)
-{
-    uint32 data;
-    recvData >> data;
-
-    uint8 index = uint8(data / 32);
-    if (index >= MAX_ACCOUNT_TUTORIAL_VALUES)
-        return;
-
-    uint32 value = (data % 32);
-
-    uint32 flag = GetTutorialInt(index);
-    flag |= (1 << value);
-    SetTutorialInt(index, flag);
-}
-
-void WorldSession::HandleTutorialClear(WorldPacket & /*recvData*/)
-{
-    for (uint8 i = 0; i < MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
-        SetTutorialInt(i, 0xFFFFFFFF);
-}
-
-void WorldSession::HandleTutorialReset(WorldPacket & /*recvData*/)
-{
-    for (uint8 i = 0; i < MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
-        SetTutorialInt(i, 0x00000000);
 }
 
 void WorldSession::HandleSetWatchedFactionOpcode(WorldPacket& recvData)

@@ -60,7 +60,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     // get the destination map entry, not the current one, this will fix homebind and reset greeting
     MapEntry const* mEntry = sMapStore.LookupEntry(loc.GetMapId());
-    InstanceTemplate const* mInstance = sObjectMgr->GetInstanceTemplate(loc.GetMapId());
 
     Map* oldMap = GetPlayer()->GetMap();
     if (GetPlayer()->IsInWorld())
@@ -68,12 +67,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
         sLog->outError("Player (Name %s) is still in world when teleported from map %u to new map %u", GetPlayer()->GetName().c_str(), oldMap->GetId(), loc.GetMapId());
         oldMap->RemovePlayerFromMap(GetPlayer(), false);
     }
-
-    // reset instance validity, except if going to an instance inside an instance
-    if (GetPlayer()->m_InstanceValid == false && !mInstance)
-	{
-        GetPlayer()->m_InstanceValid = true;
-	}
 
     // relocate the player to the teleport destination
     Map* newMap = sMapMgr->CreateMap(loc.GetMapId(), GetPlayer());
@@ -149,8 +142,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     }
 
     bool allowMount = !mEntry->IsDungeon() || mEntry->IsBattlegroundOrArena();
-    if (mInstance)
-        allowMount = mInstance->AllowMount;
 
     // mount allow check
     if (!allowMount)

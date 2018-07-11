@@ -597,12 +597,6 @@ struct AuctionHouseEntry
                                                             // 20 string flag, unused
 };
 
-struct BankBagSlotPricesEntry
-{
-    uint32  ID;
-    uint32  price;
-};
-
 struct BarberShopStyleEntry
 {
     uint32  Id;                                             // 0

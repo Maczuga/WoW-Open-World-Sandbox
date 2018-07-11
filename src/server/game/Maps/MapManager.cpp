@@ -118,10 +118,6 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
     if (!entry->IsDungeon())
         return true;
 
-    InstanceTemplate const* instance = sObjectMgr->GetInstanceTemplate(mapid);
-    if (!instance)
-        return false;
-
     Difficulty targetDifficulty, requestedDifficulty;
     targetDifficulty = requestedDifficulty = Difficulty(0);
 
@@ -148,8 +144,7 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
                 if (corpseMap == mapid)
                     break;
 
-                InstanceTemplate const* corpseInstance = sObjectMgr->GetInstanceTemplate(corpseMap);
-                corpseMap = corpseInstance ? corpseInstance->Parent : 0;
+                corpseMap = 0;
             } while (corpseMap);
 
             if (!corpseMap)
@@ -167,8 +162,7 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
             ;//sLog->outDebug(LOG_FILTER_MAPS, "Map::CanPlayerEnter - player '%s' is dead but does not have a corpse!", player->GetName().c_str());
     }
 
-    //Other requirements
-    return player->Satisfy(sObjectMgr->GetAccessRequirement(mapid, targetDifficulty), mapid, true);
+    return true;
 }
 
 void MapManager::Update(uint32 diff)
@@ -231,12 +225,7 @@ bool MapManager::IsValidMAP(uint32 mapid, bool startUp)
 {
     MapEntry const* mEntry = sMapStore.LookupEntry(mapid);
 
-    if (startUp)
-        return mEntry ? true : false;
-    else
-        return mEntry && (!mEntry->IsDungeon() || sObjectMgr->GetInstanceTemplate(mapid));
-
-    // TODO: add check for battleground template
+    return mEntry ? true : false;
 }
 
 void MapManager::UnloadAll()

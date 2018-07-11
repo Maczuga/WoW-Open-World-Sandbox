@@ -218,18 +218,6 @@ public:
 #pragma pack(push, 1)
 #endif
 
-struct InstanceTemplate
-{
-    uint32 Parent;
-    uint32 ScriptId;
-    bool AllowMount;
-};
-
-enum LevelRequirementVsMode
-{
-    LEVELREQUIREMENT_HEROIC = 70
-};
- 
 struct ZoneDynamicInfo
 {
     ZoneDynamicInfo() : MusicId(0), WeatherId(0), WeatherGrade(0.0f),

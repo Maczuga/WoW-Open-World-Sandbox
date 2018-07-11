@@ -85,29 +85,12 @@ enum PartyOperation
     PARTY_OP_SWAP = 4
 };
 
-enum BFLeaveReason
-{
-    BF_LEAVE_REASON_CLOSE     = 0x00000001,
-    //BF_LEAVE_REASON_UNK1      = 0x00000002, (not used)
-    //BF_LEAVE_REASON_UNK2      = 0x00000004, (not used)
-    BF_LEAVE_REASON_EXITED    = 0x00000008,
-    BF_LEAVE_REASON_LOW_LEVEL = 0x00000010,
-};
-
 enum ChatRestrictionType
 {
     ERR_CHAT_RESTRICTED = 0,
     ERR_CHAT_THROTTLED  = 1,
     ERR_USER_SQUELCHED  = 2,
     ERR_YELL_RESTRICTED = 3
-};
-
-enum CharterTypes
-{
-    GUILD_CHARTER_TYPE                            = 9,
-    ARENA_TEAM_CHARTER_2v2_TYPE                   = 2,
-    ARENA_TEAM_CHARTER_3v3_TYPE                   = 3,
-    ARENA_TEAM_CHARTER_5v5_TYPE                   = 5
 };
 
 //class to deal with packet processing
@@ -258,7 +241,6 @@ class WorldSession
         void SendShowBank(uint64 guid);
         bool CanOpenMailBox(uint64 guid);
         void SendShowMailBox(uint64 guid);
-        void SendTabardVendorActivate(uint64 guid);
         void SendSpiritResurrect();
         void SendBindPoint(Creature* npc);
 
@@ -275,10 +257,6 @@ class WorldSession
 
         // Pet
         void SendPetNameQuery(uint64 guid, uint32 petnumber);
-        void SendStablePet(uint64 guid);
-        void SendStablePetCallback(PreparedQueryResult result, uint64 guid);
-        void SendStableResult(uint8 guid);
-        bool CheckStableMaster(uint64 guid);
 
         // Account Data
         AccountData* GetAccountData(AccountDataType type) { return &m_accountData[type]; }
@@ -287,18 +265,8 @@ class WorldSession
         void LoadGlobalAccountData();
         void LoadAccountData(PreparedQueryResult result, uint32 mask);
 
-        void LoadTutorialsData();
         void SendTutorialsData();
-        void SaveTutorialsData(SQLTransaction& trans);
-        uint32 GetTutorialInt(uint8 index) const { return m_Tutorials[index]; }
-        void SetTutorialInt(uint8 index, uint32 value)
-        {
-            if (m_Tutorials[index] != value)
-            {
-                m_Tutorials[index] = value;
-                m_TutorialsChanged = true;
-            }
-        }
+
         //used with item_page table
         bool SendItemInfo(uint32 itemid, WorldPacket data);
         //auction
@@ -317,9 +285,6 @@ class WorldSession
         void SendDoFlight(uint32 mountDisplayId, uint32 path, uint32 pathNode = 0);
         bool SendLearnNewTaxiNode(Creature* unit);
         void SendDiscoverNewTaxiNode(uint32 nodeid);
-
-        // Guild
-        void SendPetitionShowList(uint64 guid);
 
         void BuildPartyMemberStatsChangedPacket(Player* player, WorldPacket* data);
 
@@ -428,7 +393,6 @@ class WorldSession
         void HandleAddIgnoreOpcode(WorldPacket& recvPacket);
         void HandleDelIgnoreOpcode(WorldPacket& recvPacket);
         void HandleSetContactNotesOpcode(WorldPacket& recvPacket);
-        void HandleBugOpcode(WorldPacket& recvPacket);
         void HandleSetAmmoOpcode(WorldPacket& recvPacket);
         void HandleItemNameQueryOpcode(WorldPacket& recvPacket);
 
@@ -486,15 +450,6 @@ class WorldSession
         void HandleGroupAssistantLeaderOpcode(WorldPacket& recvData);
         void HandlePartyAssignmentOpcode(WorldPacket& recvData);
 
-        void HandlePetitionBuyOpcode(WorldPacket& recvData);
-        void HandlePetitionShowSignOpcode(WorldPacket& recvData);
-        void HandlePetitionQueryOpcode(WorldPacket& recvData);
-        void HandlePetitionRenameOpcode(WorldPacket& recvData);
-        void HandlePetitionSignOpcode(WorldPacket& recvData);
-        void HandlePetitionDeclineOpcode(WorldPacket& recvData);
-        void HandleOfferPetitionOpcode(WorldPacket& recvData);
-        void HandleTurnInPetitionOpcode(WorldPacket& recvData);
-
         void HandleGuildQueryOpcode(WorldPacket& recvPacket);
         void HandleGuildCreateOpcode(WorldPacket& recvPacket);
         void HandleGuildInviteOpcode(WorldPacket& recvPacket);
@@ -516,7 +471,6 @@ class WorldSession
         void HandleGuildAddRankOpcode(WorldPacket& recvPacket);
         void HandleGuildDelRankOpcode(WorldPacket& recvPacket);
         void HandleGuildChangeInfoTextOpcode(WorldPacket& recvPacket);
-        void HandleSaveGuildEmblemOpcode(WorldPacket& recvPacket);
 
         void HandleTaxiNodeStatusQueryOpcode(WorldPacket& recvPacket);
         void HandleTaxiQueryAvailableNodes(WorldPacket& recvPacket);
@@ -525,26 +479,11 @@ class WorldSession
         void HandleMoveSplineDoneOpcode(WorldPacket& recvPacket);
         void SendActivateTaxiReply(ActivateTaxiReply reply);
 
-        void HandleTabardVendorActivateOpcode(WorldPacket& recvPacket);
-        void HandleBankerActivateOpcode(WorldPacket& recvPacket);
-        void HandleBuyBankSlotOpcode(WorldPacket& recvPacket);
-        void HandleTrainerListOpcode(WorldPacket& recvPacket);
-        void HandleTrainerBuySpellOpcode(WorldPacket& recvPacket);
-        void HandlePetitionShowListOpcode(WorldPacket& recvPacket);
         void HandleGossipHelloOpcode(WorldPacket& recvPacket);
         void HandleGossipSelectOptionOpcode(WorldPacket& recvPacket);
         void HandleSpiritHealerActivateOpcode(WorldPacket& recvPacket);
         void HandleNpcTextQueryOpcode(WorldPacket& recvPacket);
         void HandleBinderActivateOpcode(WorldPacket& recvPacket);
-        void HandleListStabledPetsOpcode(WorldPacket& recvPacket);
-        void HandleStablePet(WorldPacket& recvPacket);
-        void HandleStablePetCallback(PreparedQueryResult result);
-        void HandleUnstablePet(WorldPacket& recvPacket);
-        void HandleUnstablePetCallback(PreparedQueryResult result, uint32 petId);
-        void HandleBuyStableSlot(WorldPacket& recvPacket);
-        void HandleStableRevivePet(WorldPacket& recvPacket);
-        void HandleStableSwapPet(WorldPacket& recvPacket);
-        void HandleStableSwapPetCallback(PreparedQueryResult result, uint32 petId);
 		void HandleOpenWrappedItemCallback(PreparedQueryResult result, uint8 bagIndex, uint8 slot, uint32 itemLowGUID);
 		void HandleLoadActionsSwitchSpec(PreparedQueryResult result);
 		uint8 HandleLoadPetFromDBFirstCallback(PreparedQueryResult result, uint8 asynchLoadType);
@@ -678,10 +617,6 @@ class WorldSession
 
         void HandlePageTextQueryOpcode(WorldPacket& recvPacket);
 
-        void HandleTutorialFlag (WorldPacket& recvData);
-        void HandleTutorialClear(WorldPacket& recvData);
-        void HandleTutorialReset(WorldPacket& recvData);
-
         //Pet
         void HandlePetAction(WorldPacket& recvData);
         void HandlePetStopAttack(WorldPacket& recvData);
@@ -794,9 +729,6 @@ class WorldSession
         PreparedQueryResultFuture _charEnumCallback;
         PreparedQueryResultFuture _stablePetCallback;
         QueryCallback<PreparedQueryResult, std::string> _charRenameCallback;
-        QueryCallback<PreparedQueryResult, uint32> _unstablePetCallback;
-        QueryCallback<PreparedQueryResult, uint32> _stableSwapCallback;
-        QueryCallback<PreparedQueryResult, uint64> _sendStabledPetCallback;
         QueryCallback<PreparedQueryResult, CharacterCreateInfo*, true> _charCreateCallback;
 
         QueryResultHolderFuture _charLoginCallback;
@@ -851,11 +783,8 @@ class WorldSession
         uint32 m_latency;
         uint32 m_clientTimeDelay;
         AccountData m_accountData[NUM_ACCOUNT_DATA_TYPES];
-        uint32 m_Tutorials[MAX_ACCOUNT_TUTORIAL_VALUES];
-        bool   m_TutorialsChanged;
         AddonsList m_addonsList;
         ACE_Based::LockedQueue<WorldPacket*, ACE_Thread_Mutex> _recvQueue;
-        uint64 m_currentBankerGUID;
         time_t timeWhoCommandAllowed;
 		uint32 _offlineTime;
 		bool _kicked;

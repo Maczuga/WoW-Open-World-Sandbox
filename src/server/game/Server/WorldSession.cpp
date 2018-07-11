@@ -96,11 +96,9 @@ _security(sec), _accountId(id), m_expansion(expansion), _logoutTime(0),
 m_inQueue(false), m_playerLoading(false), m_playerLogout(false), m_playerSave(false),
 m_sessionDbcLocale(sWorld->GetDefaultDbcLocale()),
 m_sessionDbLocaleIndex(locale),
-m_latency(0), m_clientTimeDelay(0), m_TutorialsChanged(false), 
-m_currentBankerGUID(0), timeWhoCommandAllowed(0), _lastAuctionListItemsMSTime(0), _lastAuctionListOwnerItemsMSTime(0), _skipQueue(skipQueue)
+m_latency(0), m_clientTimeDelay(0),
+timeWhoCommandAllowed(0), _lastAuctionListItemsMSTime(0), _lastAuctionListOwnerItemsMSTime(0), _skipQueue(skipQueue)
 {
-	memset(m_Tutorials, 0, sizeof(m_Tutorials));
-
 	_offlineTime = 0;
 	_kicked = false;
 	_shouldSetOfflineInDB = true;
@@ -428,10 +426,6 @@ void WorldSession::LogoutPlayer(bool save)
             _player->RepopAtGraveyard();
         }
 
-		// pussywizard: checked first time
-		if (!_player->IsBeingTeleportedFar() && !_player->m_InstanceValid && !_player->IsGameMaster())
-            _player->RepopAtGraveyard();
-
         ///- If the player is in a guild, update the guild roster and broadcast a logout message to other guild members
         if (Guild* guild = sGuildMgr->GetGuildById(_player->GetGuildId()))
             guild->HandleMemberLogout(this);
@@ -450,10 +444,6 @@ void WorldSession::LogoutPlayer(bool save)
         // a) in group; b) not in raid group; c) logging out normally (not being kicked or disconnected)
         if (_player->GetGroup() && m_Socket)
             _player->RemoveFromGroup();
-
-		// pussywizard: checked second time after being removed from a group
-        if (!_player->IsBeingTeleportedFar() && !_player->m_InstanceValid && !_player->IsGameMaster())
-            _player->RepopAtGraveyard();
 
         // Repop at GraveYard or other player far teleport will prevent saving player because of not present map
         // Teleport player immediately for correct player save
@@ -694,47 +684,12 @@ void WorldSession::SendAccountDataTimes(uint32 mask)
     SendPacket(&data);
 }
 
-void WorldSession::LoadTutorialsData()
-{
-    memset(m_Tutorials, 0, sizeof(uint32) * MAX_ACCOUNT_TUTORIAL_VALUES);
-
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_TUTORIALS);
-    stmt->setUInt32(0, GetAccountId());
-    if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
-        for (uint8 i = 0; i < MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
-            m_Tutorials[i] = (*result)[i].GetUInt32();
-
-    m_TutorialsChanged = false;
-}
-
 void WorldSession::SendTutorialsData()
 {
     WorldPacket data(SMSG_TUTORIAL_FLAGS, 4 * MAX_ACCOUNT_TUTORIAL_VALUES);
     for (uint8 i = 0; i < MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
-        data << m_Tutorials[i];
+        data << uint32(0xFFFFFFFF); // Disable any tutorials
     SendPacket(&data);
-}
-
-void WorldSession::SaveTutorialsData(SQLTransaction &trans)
-{
-    if (!m_TutorialsChanged)
-        return;
-
-	bool hasTutorials = false;
-	for (uint8 i = 0; i < MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
-		if (m_Tutorials[i] != 0)
-		{
-			hasTutorials = true;
-			break;
-		}
-
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(hasTutorials ? CHAR_UPD_TUTORIALS : CHAR_INS_TUTORIALS);
-    for (uint8 i = 0; i < MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
-        stmt->setUInt32(i, m_Tutorials[i]);
-    stmt->setUInt32(MAX_ACCOUNT_TUTORIAL_VALUES, GetAccountId());
-    trans->Append(stmt);
-
-    m_TutorialsChanged = false;
 }
 
 void WorldSession::ReadMovementInfo(WorldPacket &data, MovementInfo* mi)
@@ -1100,45 +1055,6 @@ void WorldSession::ProcessQueryCallbackPlayer()
 void WorldSession::ProcessQueryCallbackPet()
 {
 	PreparedQueryResult result;
-
-    //- SendStabledPet
-    if (_sendStabledPetCallback.IsReady())
-    {
-        uint64 param = _sendStabledPetCallback.GetParam();
-        _sendStabledPetCallback.GetResult(result);
-        SendStablePetCallback(result, param);
-        _sendStabledPetCallback.FreeResult();
-		return;
-    }
-
-    //- HandleStablePet
-    if (_stablePetCallback.ready())
-    {
-        _stablePetCallback.get(result);
-        HandleStablePetCallback(result);
-        _stablePetCallback.cancel();
-		return;
-    }
-
-    //- HandleUnstablePet
-    if (_unstablePetCallback.IsReady())
-    {
-        uint32 param = _unstablePetCallback.GetParam();
-        _unstablePetCallback.GetResult(result);
-        HandleUnstablePetCallback(result, param);
-        _unstablePetCallback.FreeResult();
-		return;
-    }
-
-    //- HandleStableSwapPet
-    if (_stableSwapCallback.IsReady())
-    {
-        uint32 param = _stableSwapCallback.GetParam();
-        _stableSwapCallback.GetResult(result);
-        HandleStableSwapPetCallback(result, param);
-        _stableSwapCallback.FreeResult();
-		return;
-    }
 
 	//- LoadPetFromDB first part
 	if (_loadPetFromDBFirstCallback.IsReady())

@@ -51,7 +51,7 @@ enum eTradeskill
     GOSSIP_ACTION_BANK                  = 6,
     GOSSIP_ACTION_INN                   = 7,
     GOSSIP_ACTION_HEAL                  = 8,
-    GOSSIP_ACTION_TABARD                = 9,
+    // GOSSIP_ACTION_TABARD                = 9,
     GOSSIP_ACTION_AUCTION               = 10,
     GOSSIP_ACTION_INN_INFO              = 11,
     GOSSIP_ACTION_UNLEARN               = 12,

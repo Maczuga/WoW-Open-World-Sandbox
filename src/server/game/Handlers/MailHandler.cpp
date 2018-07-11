@@ -281,12 +281,6 @@ void WorldSession::HandleSendMail(WorldPacket & recvData)
             // if item send to character at another account, then apply item delivery delay
             needItemDelay = GetAccountId() != rc_account;
         }
-
-		if( money >= 10*GOLD )
-		{
-			CleanStringForMysqlQuery(subject);
-			CharacterDatabase.PExecute("INSERT INTO log_money VALUES(%u, %u, \"%s\", \"%s\", %u, \"%s\", %u, \"<MAIL> %s\", NOW())", GetAccountId(), player->GetGUIDLow(), player->GetName().c_str(), player->GetSession()->GetRemoteAddress().c_str(), rc_account, receiver.c_str(), money, subject.c_str());
-		}
     }
 
     // If theres is an item, there is a one hour delivery delay if sent to another account's character.
@@ -491,16 +485,6 @@ void WorldSession::HandleMailTakeItem(WorldPacket & recvData)
                 MailDraft(m->subject, "")
                     .AddMoney(m->COD)
                     .SendMailTo(trans, MailReceiver(sender, m->sender), MailSender(MAIL_NORMAL, m->receiver), MAIL_CHECK_MASK_COD_PAYMENT);
-
-				if( m->COD >= 10*GOLD )
-				{
-					std::string senderName;
-					if (!sObjectMgr->GetPlayerNameByGUID(sender_guid, senderName))
-						senderName = sObjectMgr->GetTrinityStringForDBCLocale(LANG_UNKNOWN);
-					std::string subj = m->subject;
-					CleanStringForMysqlQuery(subj);
-					CharacterDatabase.PExecute("INSERT INTO log_money VALUES(%u, %u, \"%s\", \"%s\", %u, \"%s\", %u, \"<COD> %s\", NOW())", GetAccountId(), player->GetGUIDLow(), player->GetName().c_str(), player->GetSession()->GetRemoteAddress().c_str(), sender_accId, senderName.c_str(), m->COD, subj.c_str());
-				}
             }
 
             player->ModifyMoney(-int32(m->COD));

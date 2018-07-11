@@ -278,9 +278,6 @@ ObjectMgr::~ObjectMgr()
         itr->second.Clear();
 
     _cacheTrainerSpellStore.clear();
-
-    for (AccessRequirementContainer::iterator itr = _accessRequirementStore.begin(); itr != _accessRequirementStore.end(); ++itr)
-        delete itr->second;
 }
 
 void ObjectMgr::LoadCreatureTemplates()
@@ -5045,15 +5042,6 @@ PageText const* ObjectMgr::GetPageText(uint32 pageEntry)
     return NULL;
 }
 
-InstanceTemplate const* ObjectMgr::GetInstanceTemplate(uint32 mapID)
-{
-    InstanceTemplateContainer::const_iterator itr = _instanceTemplateStore.find(uint16(mapID));
-    if (itr != _instanceTemplateStore.end())
-        return &(itr->second);
-
-    return NULL;
-}
-
 GossipText const* ObjectMgr::GetGossipText(uint32 Text_ID) const
 {
     GossipTextContainer::const_iterator itr = _gossipTextStore.find(Text_ID);
@@ -5835,105 +5823,6 @@ void ObjectMgr::LoadAreaTriggerTeleports()
     sLog->outString();
 }
 
-void ObjectMgr::LoadAccessRequirements()
-{
-    uint32 oldMSTime = getMSTime();
-
-    if (!_accessRequirementStore.empty())
-    {
-        for (AccessRequirementContainer::iterator itr = _accessRequirementStore.begin(); itr != _accessRequirementStore.end(); ++itr)
-            delete itr->second;
-
-        _accessRequirementStore.clear();                                  // need for reload case
-    }
-
-    //                                               0      1           2          3          4     5      6             7             8                      9                  10
-    QueryResult result = WorldDatabase.Query("SELECT mapid, difficulty, level_min, level_max, item, item2, quest_done_A, quest_done_H, completed_achievement, quest_failed_text, item_level FROM access_requirement");
-    if (!result)
-    {
-        sLog->outString(">> Loaded 0 access requirement definitions. DB table `access_requirement` is empty.");
-        sLog->outString();
-        return;
-    }
-
-    uint32 count = 0;
-
-    do
-    {
-        Field* fields = result->Fetch();
-
-        ++count;
-
-        uint32 mapid = fields[0].GetUInt32();
-        uint8 difficulty = fields[1].GetUInt8();
-        uint32 requirement_ID = MAKE_PAIR32(mapid, difficulty);
-
-        AccessRequirement* ar = new AccessRequirement();
-
-        ar->levelMin                 = fields[2].GetUInt8();
-        ar->levelMax                 = fields[3].GetUInt8();
-        ar->item                     = fields[4].GetUInt32();
-        ar->item2                    = fields[5].GetUInt32();
-        ar->quest_A                  = fields[6].GetUInt32();
-        ar->quest_H                  = fields[7].GetUInt32();
-        ar->achievement              = fields[8].GetUInt32();
-        ar->questFailedText          = fields[9].GetString();
-        ar->reqItemLevel             = fields[10].GetUInt16();
-
-        if (ar->item)
-        {
-            ItemTemplate const* pProto = GetItemTemplate(ar->item);
-            if (!pProto)
-            {
-                sLog->outError("Key item %u does not exist for map %u difficulty %u, removing key requirement.", ar->item, mapid, difficulty);
-                ar->item = 0;
-            }
-        }
-
-        if (ar->item2)
-        {
-            ItemTemplate const* pProto = GetItemTemplate(ar->item2);
-            if (!pProto)
-            {
-                sLog->outError("Second item %u does not exist for map %u difficulty %u, removing key requirement.", ar->item2, mapid, difficulty);
-                ar->item2 = 0;
-            }
-        }
-
-        if (ar->quest_A)
-        {
-            if (!GetQuestTemplate(ar->quest_A))
-            {
-                sLog->outErrorDb("Required Alliance Quest %u not exist for map %u difficulty %u, remove quest done requirement.", ar->quest_A, mapid, difficulty);
-                ar->quest_A = 0;
-            }
-        }
-
-        if (ar->quest_H)
-        {
-            if (!GetQuestTemplate(ar->quest_H))
-            {
-                sLog->outErrorDb("Required Horde Quest %u not exist for map %u difficulty %u, remove quest done requirement.", ar->quest_H, mapid, difficulty);
-                ar->quest_H = 0;
-            }
-        }
-
-        if (ar->achievement)
-        {
-            if (!sAchievementStore.LookupEntry(ar->achievement))
-            {
-                sLog->outErrorDb("Required Achievement %u not exist for map %u difficulty %u, remove quest done requirement.", ar->achievement, mapid, difficulty);
-                ar->achievement = 0;
-            }
-        }
-
-        _accessRequirementStore[requirement_ID] = ar;
-    } while (result->NextRow());
-
-    sLog->outString(">> Loaded %u access requirement definitions in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
-    sLog->outString();
-}
-
 /*
  * Searches for the areatrigger which teleports players out of the given map with instance_template.parent field support
  */
@@ -5944,17 +5833,6 @@ AreaTrigger const* ObjectMgr::GetGoBackTrigger(uint32 Map) const
     const MapEntry* mapEntry = sMapStore.LookupEntry(Map);
     if (!mapEntry || mapEntry->entrance_map < 0)
         return NULL;
-
-    if (mapEntry->IsDungeon())
-    {
-        const InstanceTemplate* iTemplate = sObjectMgr->GetInstanceTemplate(Map);
-
-        if (!iTemplate)
-            return NULL;
-
-        parentId = iTemplate->Parent;
-        useParentDbValue = true;
-    }
 
     uint32 entrance_map = uint32(mapEntry->entrance_map);
     for (AreaTriggerContainer::const_iterator itr = _areaTriggerStore.begin(); itr != _areaTriggerStore.end(); ++itr)

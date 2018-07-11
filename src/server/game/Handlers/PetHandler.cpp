@@ -817,29 +817,6 @@ void WorldSession::SendPetNameQuery(uint64 petguid, uint32 petnumber)
     SendPacket(&data);
 }
 
-bool WorldSession::CheckStableMaster(uint64 guid)
-{
-    // spell case or GM
-    if (guid == GetPlayer()->GetGUID())
-    {
-        if (!GetPlayer()->IsGameMaster() && !GetPlayer()->HasAuraType(SPELL_AURA_OPEN_STABLE))
-        {
-            ;//sLog->outStaticDebug("Player (GUID:%u) attempt open stable in cheating way.", GUID_LOPART(guid));
-            return false;
-        }
-    }
-    // stable master case
-    else
-    {
-        if (!GetPlayer()->GetNPCIfCanInteractWith(guid, UNIT_NPC_FLAG_STABLEMASTER))
-        {
-            ;//sLog->outStaticDebug("Stablemaster (GUID:%u) not found or you can't interact with him.", GUID_LOPART(guid));
-            return false;
-        }
-    }
-    return true;
-}
-
 void WorldSession::HandlePetSetAction(WorldPacket & recvData)
 {
     ;//sLog->outDetail("HandlePetSetAction. CMSG_PET_SET_ACTION");

@@ -145,9 +145,6 @@ bool Group::LoadGroupFromDB(Field* fields)
         stmt->setUInt32(0, groupLowGuid);
         trans->Append(stmt);
         CharacterDatabase.CommitTransaction(trans);
-        stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_LFG_DATA);
-        stmt->setUInt32(0, groupLowGuid);
-        CharacterDatabase.Execute(stmt);
         return false;
 	}
 
@@ -557,10 +554,6 @@ void Group::Disband(bool hideDestroy /* = false */)
     trans->Append(stmt);
 
     CharacterDatabase.CommitTransaction(trans);
-
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_LFG_DATA);
-    stmt->setUInt32(0, GetLowGUID());
-    CharacterDatabase.Execute(stmt);
 
     sGroupMgr->RemoveGroup(this);
     delete this;

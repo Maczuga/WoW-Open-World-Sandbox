@@ -67,7 +67,6 @@ extern DBCStorage <AreaGroupEntry>               sAreaGroupStore;
 extern DBCStorage <AreaPOIEntry>                 sAreaPOIStore;
 extern DBCStorage <AreaTriggerEntry>             sAreaTriggerStore;
 extern DBCStorage <AuctionHouseEntry>            sAuctionHouseStore;
-extern DBCStorage <BankBagSlotPricesEntry>       sBankBagSlotPricesStore;
 extern DBCStorage <BarberShopStyleEntry>         sBarberShopStyleStore;
 extern DBCStorage <ChatChannelsEntry>            sChatChannelsStore;
 extern DBCStorage <CharStartOutfitEntry>         sCharStartOutfitStore;

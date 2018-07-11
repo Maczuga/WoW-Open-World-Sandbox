@@ -860,19 +860,6 @@ enum PlayerCharmedAISpells
 #define MAX_PLAYER_SUMMON_DELAY                   (2*MINUTE)
 #define MAX_MONEY_AMOUNT                       (0x7FFFFFFF-1)
 
-struct AccessRequirement
-{
-    uint8  levelMin;
-    uint8  levelMax;
-    uint32 item;
-    uint32 item2;
-    uint32 quest_A;
-    uint32 quest_H;
-    uint32 achievement;
-    std::string questFailedText;
-    uint16 reqItemLevel;
-};
-
 enum CharDeleteMethod
 {
     CHAR_DELETE_REMOVE = 0,                      // Completely remove from the database
@@ -1361,8 +1348,6 @@ class Player : public Unit, public GridObject<Player>
         void LoadPet();
 
         bool AddItem(uint32 itemId, uint32 count);
-
-        uint32 m_stableSlots;
 
         /*********************************************************/
         /***                    GOSSIP SYSTEM                  ***/
@@ -1860,7 +1845,6 @@ class Player : public Unit, public GridObject<Player>
         static uint32 GetGroupIdFromStorage(uint32 guid);
         static uint32 GetArenaTeamIdFromStorage(uint32 guid, uint8 slot);
         uint32 GetGuildIdInvited() { return m_GuildIdInvited; }
-        static void RemovePetitionsAndSigns(uint64 guid, uint32 type);
         
         bool UpdateSkill(uint32 skill_id, uint32 step);
         bool UpdateSkillPro(uint16 SkillId, int32 Chance, uint32 step);
@@ -2243,18 +2227,6 @@ class Player : public Unit, public GridObject<Player>
 
         void SendCinematicStart(uint32 CinematicSequenceId);
         void SendMovieStart(uint32 MovieId);
-
-        /*********************************************************/
-        /***                 INSTANCE SYSTEM                   ***/
-        /*********************************************************/
-
-        void UpdateHomebindTime(uint32 time);
-
-        uint32 m_HomebindTimer;
-        bool m_InstanceValid;
-        void SendSavedInstances();
-        bool Satisfy(AccessRequirement const* ar, uint32 target_map, bool report = false);
-        bool CheckInstanceLoginValid();
 
         // last used pet number (for BG's)
         uint32 GetLastPetNumber() const { return m_lastpetnumber; }

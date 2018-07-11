@@ -68,7 +68,6 @@
 #include "CreatureTextMgr.h"
 #include "Channel.h"
 #include "ChannelMgr.h"
-#include "PetitionMgr.h"
 #include "LootItemStorage.h"
 #include "TransportMgr.h"
 #include "AvgDiffTracker.h"
@@ -515,7 +514,7 @@ void World::LoadConfigSettings(bool reload)
     rate_values[RATE_AUCTION_DEPOSIT] = sConfigMgr->GetFloatDefault("Rate.Auction.Deposit", 1.0f);
     rate_values[RATE_AUCTION_CUT] = sConfigMgr->GetFloatDefault("Rate.Auction.Cut", 1.0f);
     rate_values[RATE_HONOR] = sConfigMgr->GetFloatDefault("Rate.Honor", 1.0f);
-    rate_values[RATE_INSTANCE_RESET_TIME] = sConfigMgr->GetFloatDefault("Rate.InstanceResetTime", 1.0f);
+
     rate_values[RATE_TALENT] = sConfigMgr->GetFloatDefault("Rate.Talent", 1.0f);
     if (rate_values[RATE_TALENT] < 0.0f)
     {
@@ -797,10 +796,6 @@ void World::LoadConfigSettings(bool reload)
 
     m_bool_configs[CONFIG_ALL_TAXI_PATHS] = sConfigMgr->GetBoolDefault("AllFlightPaths", false);
     m_bool_configs[CONFIG_INSTANT_TAXI] = sConfigMgr->GetBoolDefault("InstantFlightPaths", false);
-
-    m_int_configs[CONFIG_INSTANCE_RESET_TIME_HOUR]  = sConfigMgr->GetIntDefault("Instance.ResetTimeHour", 4);
-	m_int_configs[CONFIG_INSTANCE_RESET_TIME_RELATIVE_TIMESTAMP] = sConfigMgr->GetIntDefault("Instance.ResetTimeRelativeTimestamp", 1135814400);
-    m_int_configs[CONFIG_INSTANCE_UNLOAD_DELAY] = sConfigMgr->GetIntDefault("Instance.UnloadDelay", 30 * MINUTE * IN_MILLISECONDS);
 
     m_int_configs[CONFIG_MAX_PRIMARY_TRADE_SKILL] = sConfigMgr->GetIntDefault("MaxPrimaryTradeSkill", 2);
     m_int_configs[CONFIG_MIN_PETITION_SIGNS] = sConfigMgr->GetIntDefault("MinPetitionSigns", 9);
@@ -1322,9 +1317,6 @@ void World::SetInitialWorldSettings()
     sLog->outString("Loading AreaTrigger definitions...");
     sObjectMgr->LoadAreaTriggerTeleports();
 
-    sLog->outString("Loading Access Requirements...");
-    sObjectMgr->LoadAccessRequirements();                        // must be after item template load
-
     sLog->outString("Loading Quest Area Triggers...");
     sObjectMgr->LoadQuestAreaTriggers();                         // must be after LoadQuests
 
@@ -1545,12 +1537,6 @@ void World::SetInitialWorldSettings()
 
     sLog->outString("Calculate Guild cap reset time...");
     InitGuildResetTime();
-
-	sLog->outString("Load Petitions...");
-	sPetitionMgr->LoadPetitions();
-
-	sLog->outString("Load Petition Signs...");
-	sPetitionMgr->LoadSignatures();
 
 	sLog->outString("Load Stored Loot Items...");
 	sLootItemStorage->LoadStorageFromDB();

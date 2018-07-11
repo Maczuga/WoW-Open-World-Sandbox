@@ -267,35 +267,6 @@ void WorldSession::HandleGuildChangeInfoTextOpcode(WorldPacket& recvPacket)
         guild->HandleSetInfo(this, info);
 }
 
-void WorldSession::HandleSaveGuildEmblemOpcode(WorldPacket& recvPacket)
-{
-    uint64 vendorGuid;
-    recvPacket >> vendorGuid;
-
-    EmblemInfo emblemInfo;
-    emblemInfo.ReadPacket(recvPacket);
-
-    ;//sLog->outDebug(LOG_FILTER_GUILD, "MSG_SAVE_GUILD_EMBLEM [%s]: Guid: [" UI64FMTD
-     //   "] Style: %d, Color: %d, BorderStyle: %d, BorderColor: %d, BackgroundColor: %d"
-     //   , GetPlayerInfo().c_str(), vendorGuid, emblemInfo.GetStyle()
-     //   , emblemInfo.GetColor(), emblemInfo.GetBorderStyle()
-      //  , emblemInfo.GetBorderColor(), emblemInfo.GetBackgroundColor());
-
-    if (GetPlayer()->GetNPCIfCanInteractWith(vendorGuid, UNIT_NPC_FLAG_TABARDDESIGNER))
-    {
-        // Remove fake death
-        if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
-            GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
-
-        if (Guild* guild = GetPlayer()->GetGuild())
-            guild->HandleSetEmblem(this, emblemInfo);
-        else
-            Guild::SendSaveEmblemResult(this, ERR_GUILDEMBLEM_NOGUILD); // "You are not part of a guild!";
-    }
-    else
-        Guild::SendSaveEmblemResult(this, ERR_GUILDEMBLEM_INVALIDVENDOR); // "That's not an emblem vendor!"
-}
-
 void WorldSession::HandleGuildEventLogQueryOpcode(WorldPacket& /* recvPacket */)
 {
     ;//sLog->outDebug(LOG_FILTER_GUILD, "MSG_GUILD_EVENT_LOG_QUERY [%s]", GetPlayerInfo().c_str());

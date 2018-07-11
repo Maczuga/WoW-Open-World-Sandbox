@@ -94,7 +94,6 @@ public:
             { "hidearea",           SEC_ADMINISTRATOR,      false, &HandleHideAreaCommand,              "" },
             { "additem",            SEC_ADMINISTRATOR,      false, &HandleAddItemCommand,               "" },
             { "additemset",         SEC_ADMINISTRATOR,      false, &HandleAddItemSetCommand,            "" },
-            { "bank",               SEC_ADMINISTRATOR,      false, &HandleBankCommand,                  "" },
             { "wchange",            SEC_ADMINISTRATOR,      false, &HandleChangeWeather,                "" },
             { "maxskill",           SEC_ADMINISTRATOR,      false, &HandleMaxSkillCommand,              "" },
             { "setskill",           SEC_ADMINISTRATOR,      false, &HandleSetSkillCommand,              "" },
@@ -1320,12 +1319,6 @@ public:
             return false;
         }
 
-        return true;
-    }
-
-    static bool HandleBankCommand(ChatHandler* handler, char const* /*args*/)
-    {
-        handler->GetSession()->SendShowBank(handler->GetSession()->GetPlayer()->GetGUID());
         return true;
     }
 

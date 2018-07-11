@@ -5685,24 +5685,6 @@ SpellCastResult Spell::CheckCast(bool strict)
 				// Xinef: Implement summon pending error
 				if (target->GetSummonExpireTimer() > time(NULL))
 					return SPELL_FAILED_SUMMON_PENDING;
-
-                // check if our map is dungeon
-                MapEntry const* map = sMapStore.LookupEntry(m_caster->GetMapId());
-                if (map->IsDungeon())
-                {
-                    uint32 mapId = m_caster->GetMap()->GetId();
-                    Difficulty difficulty = m_caster->GetMap()->GetDifficulty();
-                    /*if (map->IsRaid())
-                        if (InstancePlayerBind* targetBind = target->GetBoundInstance(mapId, difficulty))
-                            if (targetBind->perm && targetBind != m_caster->ToPlayer()->GetBoundInstance(mapId, difficulty))
-                                return SPELL_FAILED_TARGET_LOCKED_TO_RAID_INSTANCE;*/
-
-                    InstanceTemplate const* instance = sObjectMgr->GetInstanceTemplate(mapId);
-                    if (!instance)
-                        return SPELL_FAILED_TARGET_NOT_IN_INSTANCE;
-                    if (!target->Satisfy(sObjectMgr->GetAccessRequirement(mapId, difficulty), mapId))
-                        return SPELL_FAILED_BAD_TARGETS;
-                }
                 break;
             }
             // RETURN HERE
@@ -5852,9 +5834,7 @@ SpellCastResult Spell::CheckCast(bool strict)
 
                 // Ignore map check if spell have AreaId. AreaId already checked and this prevent special mount spells
                 bool allowMount = true;
-                InstanceTemplate const* it = sObjectMgr->GetInstanceTemplate(m_caster->GetMapId());
-                if (it)
-                    allowMount = it->AllowMount;
+
                 if (m_caster->GetTypeId() == TYPEID_PLAYER && !allowMount && !m_spellInfo->AreaGroupId)
                     return SPELL_FAILED_NO_MOUNTS_ALLOWED;
 

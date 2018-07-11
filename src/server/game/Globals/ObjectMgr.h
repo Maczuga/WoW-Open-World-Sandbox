@@ -44,7 +44,6 @@
 #include <functional>
 
 class Item;
-struct AccessRequirement;
 struct PlayerClassInfo;
 struct PlayerClassLevelInfo;
 struct PlayerInfo;
@@ -127,9 +126,6 @@ enum ScriptCommands
 
 // Benchmarked: Faster than std::unordered_map (insert/find)
 typedef std::map<uint32, PageText> PageTextContainer;
-
-// Benchmarked: Faster than std::map (insert/find)
-typedef std::unordered_map<uint16, InstanceTemplate> InstanceTemplateContainer;
 
 struct GameTele
 {
@@ -630,8 +626,6 @@ class ObjectMgr
 
         typedef std::unordered_map<uint32, uint32> AreaTriggerScriptContainer;
 
-        typedef std::unordered_map<uint32, AccessRequirement*> AccessRequirementContainer;
-
         typedef std::unordered_map<uint32, RepRewardRate > RepRewardRateContainer;
         typedef std::unordered_map<uint32, ReputationOnKillEntry> RepOnKillContainer;
         typedef std::unordered_map<uint32, RepSpilloverTemplate> RepSpilloverTemplateContainer;
@@ -670,8 +664,6 @@ class ObjectMgr
                 return &itr->second;
             return NULL;
         }
-
-        InstanceTemplate const* GetInstanceTemplate(uint32 mapId);
 
         PetLevelInfo const* GetPetLevelInfo(uint32 creature_id, uint8 level) const;
 
@@ -732,14 +724,6 @@ class ObjectMgr
             AreaTriggerContainer::const_iterator itr = _areaTriggerStore.find(trigger);
             if (itr != _areaTriggerStore.end())
                 return &itr->second;
-            return NULL;
-        }
-
-        AccessRequirement const* GetAccessRequirement(uint32 mapid, Difficulty difficulty) const
-        {
-            AccessRequirementContainer::const_iterator itr = _accessRequirementStore.find(MAKE_PAIR32(mapid, difficulty));
-            if (itr != _accessRequirementStore.end())
-                return itr->second;
             return NULL;
         }
 
@@ -885,7 +869,6 @@ class ObjectMgr
         void LoadGossipText();
 
         void LoadAreaTriggerTeleports();
-        void LoadAccessRequirements();
         void LoadQuestAreaTriggers();
         void LoadAreaTriggerScripts();
         void LoadTavernAreaTriggers();
@@ -1165,7 +1148,6 @@ class ObjectMgr
         GossipTextContainer _gossipTextStore;
         AreaTriggerContainer _areaTriggerStore;
         AreaTriggerScriptContainer _areaTriggerScriptStore;
-        AccessRequirementContainer _accessRequirementStore;
 
         RepRewardRateContainer _repRewardRateStore;
         RepOnKillContainer _repOnKillStore;
@@ -1200,7 +1182,6 @@ class ObjectMgr
         LocaleConstant DBCLocaleIndex;
 
         PageTextContainer _pageTextStore;
-        InstanceTemplateContainer _instanceTemplateStore;
 
     private:
         void LoadScripts(ScriptsType type);

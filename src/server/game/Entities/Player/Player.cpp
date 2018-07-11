@@ -46,7 +46,6 @@
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "Pet.h"
-#include "PetitionMgr.h"
 #include "QuestDef.h"
 #include "ReputationMgr.h"
 #include "SkillDiscovery.h"
@@ -769,12 +768,7 @@ Player::Player(WorldSession* session): Unit(true), m_mover(this)
     for (uint8 i = 0; i < MAX_MOVE_TYPE; ++i)
         m_forced_speed_changes[i] = 0;
 
-    m_stableSlots = 0;
-
     /////////////////// Instance System /////////////////////
-
-    m_HomebindTimer = 0;
-    m_InstanceValid = true;
 
     m_lastPotionId = 0;
 
@@ -1809,7 +1803,6 @@ void Player::Update(uint32 p_time)
     }
 
     UpdateEnchantTime(p_time);
-    UpdateHomebindTime(p_time);
 
     // group update
     SendUpdateToOutOfRangeGroupMembers();
@@ -1921,8 +1914,8 @@ bool Player::BuildEnumData(PreparedQueryResult result, WorldPacket* data)
     //    "SELECT characters.guid, characters.name, characters.race, characters.class, characters.gender, characters.playerBytes, characters.playerBytes2, characters.level, "
     //     8                9               10                     11                     12                     13                    14
     //    "characters.zone, characters.map, characters.position_x, characters.position_y, characters.position_z, guild_member.guildid, characters.playerFlags, "
-    //    15                    16                   17                     18                   19               20                     21                      22
-    //    "characters.at_login, character_pet.entry, character_pet.modelid, character_pet.level, characters.data, character_banned.guid, characters.extra_flags, character_declinedname.genitive "
+    //    15                    16                   17                     18                   19               20                      21
+    //    "characters.at_login, character_pet.entry, character_pet.modelid, character_pet.level, characters.data, characters.extra_flags, character_declinedname.genitive "
 
     Field* fields = result->Fetch();
 
@@ -1979,11 +1972,10 @@ bool Player::BuildEnumData(PreparedQueryResult result, WorldPacket* data)
         charFlags |= CHARACTER_FLAG_GHOST;
     if (atLoginFlags & AT_LOGIN_RENAME)
         charFlags |= CHARACTER_FLAG_RENAME;
-    if (fields[20].GetUInt32())
-        charFlags |= CHARACTER_FLAG_LOCKED_BY_BILLING;
+
     if (sWorld->getBoolConfig(CONFIG_DECLINED_NAMES_USED))
     {
-        if (!fields[22].GetString().empty())
+        if (!fields[21].GetString().empty())
             charFlags |= CHARACTER_FLAG_DECLINED;
     }
     else
@@ -2010,7 +2002,7 @@ bool Player::BuildEnumData(PreparedQueryResult result, WorldPacket* data)
     uint32 petFamily = 0;
 
     // show pet at selection character in character list only for non-ghost character
-    if (result && !(playerFlags & PLAYER_FLAGS_GHOST) && (plrClass == CLASS_WARLOCK || plrClass == CLASS_HUNTER || (plrClass == CLASS_DEATH_KNIGHT && (fields[21].GetUInt16()&PLAYER_EXTRA_SHOW_DK_PET))))
+    if (result && !(playerFlags & PLAYER_FLAGS_GHOST) && (plrClass == CLASS_WARLOCK || plrClass == CLASS_HUNTER || (plrClass == CLASS_DEATH_KNIGHT && (fields[20].GetUInt16()&PLAYER_EXTRA_SHOW_DK_PET))))
     {
         uint32 entry = fields[16].GetUInt32();
         CreatureTemplate const* creatureInfo = sObjectMgr->GetCreatureTemplate(entry);
@@ -2333,7 +2325,6 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                     data << teleportStore_dest.PositionXYZOStream();
 
                 GetSession()->SendPacket(&data);
-                SendSavedInstances();
             }
 
             // move packet sent by client always after far teleport
@@ -4594,9 +4585,6 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
 		if (Group* group = sGroupMgr->GetGroupByGUID(groupId))
 			RemoveFromGroup(group, playerguid);
 
-    // Remove signs from petitions (also remove petitions if owner);
-    RemovePetitionsAndSigns(playerguid, 10);
-
 	PreparedStatement* stmt = NULL;
 
     switch (charDelete_method)
@@ -4776,10 +4764,6 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             trans->Append(stmt);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SPELL_COOLDOWN);
-            stmt->setUInt32(0, guid);
-            trans->Append(stmt);
-
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_GM_TICKETS);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
@@ -13809,21 +13793,9 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
                     }
                     break;
                 }
-                case GOSSIP_OPTION_UNLEARNTALENTS:
-                    if (!creature->isCanTrainingAndResetTalentsOf(this))
-                        canTalk = false;
-                    break;
-                case GOSSIP_OPTION_UNLEARNPETTALENTS:
-                    if (!GetPet() || GetPet()->getPetType() != HUNTER_PET || GetPet()->m_spells.size() <= 1 || creature->GetCreatureTemplate()->trainer_type != TRAINER_TYPE_PETS || creature->GetCreatureTemplate()->trainer_class != CLASS_HUNTER)
-                        canTalk = false;
-                    break;
                 case GOSSIP_OPTION_TAXIVENDOR:
                     if (GetSession()->SendLearnNewTaxiNode(creature))
                         return;
-                    break;
-                case GOSSIP_OPTION_STABLEPET:
-                    if (getClass() != CLASS_HUNTER)
-                        canTalk = false;
                     break;
                 case GOSSIP_OPTION_QUESTGIVER:
                     canTalk = false;
@@ -13839,9 +13811,6 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
                 case GOSSIP_OPTION_GOSSIP:
                 case GOSSIP_OPTION_SPIRITGUIDE:
                 case GOSSIP_OPTION_INNKEEPER:
-                case GOSSIP_OPTION_BANKER:
-                case GOSSIP_OPTION_PETITIONER:
-                case GOSSIP_OPTION_TABARDDESIGNER:
                 case GOSSIP_OPTION_AUCTIONEER:
                     break;                                  // no checks
                 default:
@@ -13970,19 +13939,8 @@ void Player::OnGossipSelect(WorldObject* source, uint32 gossipListId, uint32 men
         case GOSSIP_OPTION_ARMORER:
             GetSession()->SendListInventory(guid);
             break;
-        case GOSSIP_OPTION_STABLEPET:
-            GetSession()->SendStablePet(guid);
-            break;
         case GOSSIP_OPTION_TRAINER:
             GetSession()->SendTrainerList(guid);
-            break;
-        case GOSSIP_OPTION_UNLEARNTALENTS:
-            PlayerTalkClass->SendCloseGossip();
-            SendTalentWipeConfirm(guid);
-            break;
-        case GOSSIP_OPTION_UNLEARNPETTALENTS:
-            PlayerTalkClass->SendCloseGossip();
-            ResetPetTalents();
             break;
         case GOSSIP_OPTION_TAXIVENDOR:
             GetSession()->SendTaxiMenu(source->ToCreature());
@@ -13990,17 +13948,6 @@ void Player::OnGossipSelect(WorldObject* source, uint32 gossipListId, uint32 men
         case GOSSIP_OPTION_INNKEEPER:
             PlayerTalkClass->SendCloseGossip();
             SetBindPoint(guid);
-            break;
-        case GOSSIP_OPTION_BANKER:
-            GetSession()->SendShowBank(guid);
-            break;
-        case GOSSIP_OPTION_PETITIONER:
-            PlayerTalkClass->SendCloseGossip();
-            GetSession()->SendPetitionShowList(guid);
-            break;
-        case GOSSIP_OPTION_TABARDDESIGNER:
-            PlayerTalkClass->SendCloseGossip();
-            GetSession()->SendTabardVendorActivate(guid);
             break;
         case GOSSIP_OPTION_AUCTIONEER:
             GetSession()->SendAuctionHello(guid, source->ToCreature());
@@ -16800,13 +16747,6 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     uint32 extraflags = fields[31].GetUInt16();
 
-    m_stableSlots = fields[32].GetUInt8();
-    if (m_stableSlots > MAX_PET_STABLES)
-    {
-        sLog->outError("Player can have not more %u stable slots, but have in DB %u", MAX_PET_STABLES, uint32(m_stableSlots));
-        m_stableSlots = MAX_PET_STABLES;
-    }
-
     m_atLoginFlags = fields[33].GetUInt16();
 
     if (HasAtLoginFlag(AT_LOGIN_RENAME))
@@ -17971,94 +17911,6 @@ void Player::_LoadGroup()
         RemoveFlag(PLAYER_FLAGS, PLAYER_FLAGS_GROUP_LEADER);
 }
 
-/*
-- called on every successful teleportation to a map
-*/
-void Player::SendSavedInstances()
-{ 
-    bool hasBeenSaved = false;
-    WorldPacket data;
-
-    //Send opcode 811. true or false means, whether you have current raid/heroic instances
-    data.Initialize(SMSG_UPDATE_INSTANCE_OWNERSHIP);
-    data << uint32(hasBeenSaved);
-    GetSession()->SendPacket(&data);
-}
-
-bool Player::Satisfy(AccessRequirement const* ar, uint32 target_map, bool report)
-{ 
-    if (!IsGameMaster() && ar)
-    {
-        uint8 LevelMin = 0;
-        uint8 LevelMax = 0;
-
-        MapEntry const* mapEntry = sMapStore.LookupEntry(target_map);
-        if (!mapEntry)
-            return false;
-
-        uint32 missingItem = 0;
-        if (ar->item)
-        {
-            if (!HasItemCount(ar->item, 1) &&
-                (!ar->item2 || !HasItemCount(ar->item2)))
-                missingItem = ar->item;
-        }
-        else if (ar->item2 && !HasItemCount(ar->item2))
-            missingItem = ar->item2;
-
-        uint32 missingQuest = 0;
-        if (GetTeamId() == TEAM_ALLIANCE && ar->quest_A && !GetQuestRewardStatus(ar->quest_A))
-            missingQuest = ar->quest_A;
-        else if (GetTeamId() == TEAM_HORDE && ar->quest_H && !GetQuestRewardStatus(ar->quest_H))
-            missingQuest = ar->quest_H;
-
-        uint32 missingAchievement = 0;
-        Player* leader = this;
-        uint64 leaderGuid = GetGroup() ? GetGroup()->GetLeaderGUID() : GetGUID();
-        if (leaderGuid != GetGUID())
-            leader = HashMapHolder<Player>::Find(leaderGuid);
-
-        if (ar->achievement)
-            if (!leader || !leader->HasAchieved(ar->achievement))
-                missingAchievement = ar->achievement;
-
-        if (LevelMin || LevelMax || missingItem || missingQuest || missingAchievement)
-        {
-            if (report)
-            {
-                if (missingQuest && !ar->questFailedText.empty())
-                    ChatHandler(GetSession()).PSendSysMessage("%s", ar->questFailedText.c_str());
-                else if (missingItem)
-                    GetSession()->SendAreaTriggerMessage(GetSession()->GetTrinityString(LANG_LEVEL_MINREQUIRED_AND_ITEM), LevelMin, sObjectMgr->GetItemTemplate(missingItem)->Name1.c_str());
-                else if (LevelMin)
-                    GetSession()->SendAreaTriggerMessage(GetSession()->GetTrinityString(LANG_LEVEL_MINREQUIRED), LevelMin);
-            }
-            return false;
-        }
-    }
-    return true;
-}
-
-bool Player::CheckInstanceLoginValid()
-{ 
-    if (!GetMap())
-        return false;
-
-    if (IsGameMaster())
-        return true;
-
-    // cannot be in normal instance without a group and more players than 1 in instance
-    if (!GetGroup() && GetMap()->GetPlayersCountExceptGMs() > 1)
-        return false;
-
-	// pussywizard: check CanEnter for GetMap(), because in CanPlayerEnter it is called for a map decided before loading screen (can change)
-	if (!GetMap()->CanEnter(this, true))
-		return false;
-
-    // do checks for satisfy accessreqs, instance full, encounter in progress (raid), perm bind group != perm bind player
-    return sMapMgr->CanPlayerEnter(GetMap()->GetId(), this, true);
-}
-
 bool Player::_LoadHomeBind(PreparedQueryResult result)
 { 
     PlayerInfo const* info = sObjectMgr->GetPlayerInfo(getRace(), getClass());
@@ -18164,7 +18016,6 @@ void Player::SaveToDB(bool create, bool logout)
     m_achievementMgr->SaveToDB(trans);
     m_reputationMgr->SaveToDB(trans);
     _SaveEquipmentSets(trans);
-    GetSession()->SaveTutorialsData(trans);                 // changed only while character in game
     _SaveGlyphs(trans);
 
     // check if stats should only be saved on logout
@@ -19689,79 +19540,6 @@ void Player::SendProficiency(ItemClass itemClass, uint32 itemSubclassMask)
     GetSession()->SendPacket(&data);
 }
 
-void Player::RemovePetitionsAndSigns(uint64 guid, uint32 type)
-{
-    SignatureContainer* signatureStore = sPetitionMgr->GetSignatureStore();
-	uint32 playerGuid = GUID_LOPART(guid);
-
-	for (SignatureContainer::iterator itr = signatureStore->begin(); itr != signatureStore->end(); ++itr)
-	{
-		SignatureMap::iterator signItr = itr->second.signatureMap.find(playerGuid);
-		if (signItr != itr->second.signatureMap.end())
-		{
-			Petition const* petition = sPetitionMgr->GetPetition(itr->first);
-			if (!petition || (type != 10 && type != petition->petitionType))
-				continue;
-
-			// erase this
-			itr->second.signatureMap.erase(signItr);
-
-			uint64 ownerguid   = MAKE_NEW_GUID(petition->ownerGuid, 0, HIGHGUID_PLAYER);
-			uint64 petitionguid = MAKE_NEW_GUID(petition->petitionGuid, 0, HIGHGUID_ITEM);
-
-			// send update if charter owner in game
-			Player* owner = ObjectAccessor::FindPlayerInOrOutOfWorld(ownerguid);
-			if (owner)
-				owner->GetSession()->SendPetitionQueryOpcode(petitionguid);
-		}
-    } 
-
-    if (type == 10)
-    {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_PETITION_SIGNATURES);
-        stmt->setUInt32(0, playerGuid);
-        CharacterDatabase.Execute(stmt);
-    }
-    else
-    {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PETITION_SIGNATURE);
-        stmt->setUInt32(0, playerGuid);
-        stmt->setUInt8(1, uint8(type));
-        CharacterDatabase.Execute(stmt);
-    }
-
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    if (type == 10)
-    {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PETITION_BY_OWNER);
-        stmt->setUInt32(0, playerGuid);
-        trans->Append(stmt);
-
-        stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PETITION_SIGNATURE_BY_OWNER);
-        stmt->setUInt32(0, playerGuid);
-        trans->Append(stmt);
-
-		// xinef: clear petition store
-		sPetitionMgr->RemovePetitionByOwnerAndType(playerGuid, 0);
-    }
-    else
-    {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PETITION_BY_OWNER_AND_TYPE);
-        stmt->setUInt32(0, playerGuid);
-        stmt->setUInt8(1, uint8(type));
-        trans->Append(stmt);
-
-        stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PETITION_SIGNATURE_BY_OWNER_AND_TYPE);
-        stmt->setUInt32(0, playerGuid);
-        stmt->setUInt8(1, uint8(type));
-        trans->Append(stmt);
-
-		// xinef: clear petition store
-		sPetitionMgr->RemovePetitionByOwnerAndType(playerGuid, uint8(type));
-    }
-    CharacterDatabase.CommitTransaction(trans);
-}
-
 void Player::SetRestBonus(float rest_bonus_new)
 { 
     // Prevent resting on max level
@@ -20380,45 +20158,6 @@ bool Player::BuyItemFromVendorSlot(uint64 vendorguid, uint32 vendorslot, uint32 
     }
 
     return crItem->maxcount != 0;
-}
-
-void Player::UpdateHomebindTime(uint32 time)
-{ 
-    // GMs never get homebind timer online
-    if (m_InstanceValid || IsGameMaster())
-    {
-        if (m_HomebindTimer)                                 // instance valid, but timer not reset
-        {
-            // hide reminder
-            WorldPacket data(SMSG_RAID_GROUP_ONLY, 4+4);
-            data << uint32(0);
-            data << uint32(0);
-            GetSession()->SendPacket(&data);
-        }
-        // instance is valid, reset homebind timer
-        m_HomebindTimer = 0;
-    }
-    else if (m_HomebindTimer > 0)
-    {
-        if (time >= m_HomebindTimer)
-        {
-            // teleport to nearest graveyard
-            RepopAtGraveyard();
-        }
-        else
-            m_HomebindTimer -= time;
-    }
-    else
-    {
-        // instance is invalid, start homebind timer
-        m_HomebindTimer = 60000;
-        // send message to player
-        WorldPacket data(SMSG_RAID_GROUP_ONLY, 4+4);
-        data << uint32(m_HomebindTimer);
-        data << uint32(1);
-        GetSession()->SendPacket(&data);
-        ;//sLog->outDebug(LOG_FILTER_MAPS, "PLAYER: Player '%s' (GUID: %u) will be teleported to homebind in 60 seconds", GetName().c_str(), GetGUIDLow());
-    }
 }
 
 void Player::UpdatePvPState(bool onlyFFA)
@@ -24159,7 +23898,7 @@ void Player::_SaveCharacter(bool create, SQLTransaction& trans)
         stmt->setUInt32(index++, m_resetTalentsCost);
         stmt->setUInt32(index++, uint32(m_resetTalentsTime));
         stmt->setUInt16(index++, (uint16)m_ExtraFlags);
-        stmt->setUInt8(index++,  m_stableSlots);
+        stmt->setUInt8(index++,  0);
         stmt->setUInt16(index++, (uint16)m_atLoginFlags);
         stmt->setUInt16(index++, GetZoneId(true));
         stmt->setUInt32(index++, uint32(m_deathExpireTime));
@@ -24279,7 +24018,7 @@ void Player::_SaveCharacter(bool create, SQLTransaction& trans)
         stmt->setUInt32(index++, m_resetTalentsCost);
         stmt->setUInt32(index++, uint32(m_resetTalentsTime));
         stmt->setUInt16(index++, (uint16)m_ExtraFlags);
-        stmt->setUInt8(index++,  m_stableSlots);
+        stmt->setUInt8(index++,  0);
         stmt->setUInt16(index++, (uint16)m_atLoginFlags);
         stmt->setUInt16(index++, GetZoneId(true));
         stmt->setUInt32(index++, uint32(m_deathExpireTime));

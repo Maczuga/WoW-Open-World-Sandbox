@@ -59,7 +59,6 @@ public:
         static std::vector<ChatCommand> reloadCommandTable =
         {
             { "auctions",                     SEC_ADMINISTRATOR, true,  &HandleReloadAuctionsCommand,                   "" },
-            { "access_requirement",           SEC_ADMINISTRATOR, true,  &HandleReloadAccessRequirementCommand,          "" },
             { "achievement_criteria_data",    SEC_ADMINISTRATOR, true,  &HandleReloadAchievementCriteriaDataCommand,    "" },
             { "achievement_reward",           SEC_ADMINISTRATOR, true,  &HandleReloadAchievementRewardCommand,          "" },
             { "all",                          SEC_ADMINISTRATOR, true,  NULL,                          "", reloadAllCommandTable },
@@ -149,7 +148,6 @@ public:
         HandleReloadAllItemCommand(handler, "");
         HandleReloadAllGossipsCommand(handler, "");
 
-        HandleReloadAccessRequirementCommand(handler, "");
         HandleReloadCommandCommand(handler, "");
         HandleReloadReservedNameCommand(handler, "");
         HandleReloadTrinityStringCommand(handler, "");
@@ -266,14 +264,6 @@ public:
         sWorld->LoadConfigSettings(true);
         sMapMgr->InitializeVisibilityDistanceInfo();
         handler->SendGlobalGMSysMessage("World config settings reloaded.");
-        return true;
-    }
-
-    static bool HandleReloadAccessRequirementCommand(ChatHandler* handler, const char* /*args*/)
-    {
-        sLog->outString("Re-Loading Access Requirement definitions...");
-        sObjectMgr->LoadAccessRequirements();
-        handler->SendGlobalGMSysMessage("DB table `access_requirement` reloaded.");
         return true;
     }
 
