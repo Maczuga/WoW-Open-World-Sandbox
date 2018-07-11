@@ -250,7 +250,6 @@ void WorldSession::HandleSendMail(WorldPacket & recvData)
     player->SendMailResult(0, MAIL_SEND, MAIL_OK);
 
     player->ModifyMoney(-int32(reqmoney));
-    player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GOLD_SPENT_FOR_MAIL, cost);
 
     bool needItemDelay = false;
 
@@ -607,7 +606,6 @@ void WorldSession::HandleGetMailList(WorldPacket & recvData)
                 break;
             case MAIL_CREATURE:
             case MAIL_GAMEOBJECT:
-            case MAIL_AUCTION:
                 data << uint32((*itr)->sender);            // creature/gameobject entry, auction id, calendar event id?
                 break;
         }

@@ -37,7 +37,7 @@ class CreatureTextBuilder
         {
             std::string const& text = sCreatureTextMgr->GetChatString(_source->GetEntry(), _textGroup, _textId);
 
-            return ChatHandler::BuildChatPacket(*data, _msgType, Language(_language), _source, _target, text, 0, "");
+            return ChatHandler::BuildChatPacket(*data, _msgType, Language(_language), _source, _target, text, "");
         }
 
         WorldObject* _source;
@@ -60,7 +60,7 @@ class PlayerTextBuilder
         {
             std::string const& text = sCreatureTextMgr->GetChatString(_source->GetEntry(), _textGroup, _textId);
 
-            return ChatHandler::BuildChatPacket(*data, _msgType, Language(_language), _talker, _target, text, 0, "");
+            return ChatHandler::BuildChatPacket(*data, _msgType, Language(_language), _talker, _target, text, "");
         }
 
         WorldObject* _source;

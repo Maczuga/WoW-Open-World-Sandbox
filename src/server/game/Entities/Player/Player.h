@@ -38,7 +38,6 @@ struct Mail;
 struct TrainerSpell;
 struct VendorItem;
 
-class AchievementMgr;
 class ReputationMgr;
 class Channel;
 class CharacterCreateInfo;
@@ -532,8 +531,6 @@ enum AtLoginFlags
     AT_LOGIN_CHANGE_RACE       = 0x80,
     AT_LOGIN_RESET_AP          = 0x100,
     AT_LOGIN_RESET_ARENA       = 0x200,
-    AT_LOGIN_CHECK_ACHIEVS     = 0x400,
-    AT_LOGIN_APPLY_TEMPLATE    = 0x800,
 };
 
 typedef std::map<uint32, QuestStatusData> QuestStatusMap;
@@ -810,8 +807,7 @@ enum PlayerLoginQueryIndex
     PLAYER_LOGIN_QUERY_LOAD_HOME_BIND               = 13,
     PLAYER_LOGIN_QUERY_LOAD_SPELL_COOLDOWNS         = 14,
     PLAYER_LOGIN_QUERY_LOAD_DECLINED_NAMES          = 15,
-    PLAYER_LOGIN_QUERY_LOAD_ACHIEVEMENTS            = 18,
-    PLAYER_LOGIN_QUERY_LOAD_CRITERIA_PROGRESS       = 19,
+
     PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS          = 20,
     PLAYER_LOGIN_QUERY_LOAD_ENTRY_POINT             = 21,
     PLAYER_LOGIN_QUERY_LOAD_GLYPHS                  = 22,
@@ -1264,7 +1260,6 @@ class Player : public Unit, public GridObject<Player>
         void AutoStoreLoot(uint8 bag, uint8 slot, uint32 loot_id, LootStore const& store, bool broadcast = false);
         void AutoStoreLoot(uint32 loot_id, LootStore const& store, bool broadcast = false) { AutoStoreLoot(NULL_BAG, NULL_SLOT, loot_id, store, broadcast); }
         void StoreLootItem(uint8 lootSlot, Loot* loot);
-		void UpdateLootAchievements(LootItem *item, Loot* loot);
 		void UpdateTitansGrip();
 
         InventoryResult CanTakeMoreSimilarItems(uint32 entry, uint32 count, Item* pItem, uint32* no_space_count = NULL) const;
@@ -1556,7 +1551,6 @@ class Player : public Unit, public GridObject<Player>
         {
             SetUInt32Value(PLAYER_FIELD_COINAGE, value);
             MoneyChanged(value);
-            UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_GOLD_VALUE_OWNED);
         }
 
         RewardedQuestSet const& getRewardedQuests() const { return m_RewardedQuests; }
@@ -2286,16 +2280,6 @@ class Player : public Unit, public GridObject<Player>
         void AddRunePower(uint8 index);
         void InitRunes();
 
-        void SendRespondInspectAchievements(Player* player) const;
-        bool HasAchieved(uint32 achievementId) const;
-        void ResetAchievements();
-        void CheckAllAchievementCriteria();
-        void ResetAchievementCriteria(AchievementCriteriaCondition condition, uint32 value, bool evenIfCriteriaComplete = false);
-        void UpdateAchievementCriteria(AchievementCriteriaTypes type, uint32 miscValue1 = 0, uint32 miscValue2 = 0, Unit* unit = NULL);
-        void StartTimedAchievement(AchievementCriteriaTimedTypes type, uint32 entry, uint32 timeLost = 0);
-        void RemoveTimedAchievement(AchievementCriteriaTimedTypes type, uint32 entry);
-        void CompletedAchievement(AchievementEntry const* entry);
-
         bool HasTitle(uint32 bitIndex) const;
         bool HasTitle(CharTitlesEntry const* title) const { return HasTitle(title->bit_index); }
         void SetTitle(CharTitlesEntry const* title, bool lost = false);
@@ -2632,8 +2616,6 @@ class Player : public Unit, public GridObject<Player>
 
         bool IsAlwaysDetectableFor(WorldObject const* seer) const;
 
-        AchievementMgr* GetAchievementMgr() const { return m_achievementMgr; }
-
     private:
         // internal common parts for CanStore/StoreItem functions
         InventoryResult CanStoreItem_InSpecificSlot(uint8 bag, uint8 slot, ItemPosCountVec& dest, ItemTemplate const* pProto, uint32& count, bool swap, Item* pSrcItem) const;
@@ -2683,7 +2665,6 @@ class Player : public Unit, public GridObject<Player>
         uint32 m_temporaryUnsummonedPetNumber;
         uint32 m_oldpetspell;
 
-        AchievementMgr* m_achievementMgr;
         ReputationMgr*  m_reputationMgr;
 
         SpellCooldowns m_spellCooldowns;

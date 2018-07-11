@@ -22,7 +22,6 @@
 #include "Common.h"
 #include <map>
 
-struct AuctionEntry;
 class Item;
 class Object;
 class Player;
@@ -33,7 +32,7 @@ class Player;
 enum MailMessageType
 {
     MAIL_NORMAL         = 0,
-    MAIL_AUCTION        = 2,
+    //MAIL_AUCTION        = 2,
     MAIL_CREATURE       = 3,                                // client send CMSG_CREATURE_QUERY on this mailmessagetype
     MAIL_GAMEOBJECT     = 4,                                // client send CMSG_GAMEOBJECT_QUERY on this mailmessagetype
     // MAIL_CALENDAR       = 5
@@ -55,7 +54,7 @@ enum MailStationery
     MAIL_STATIONERY_TEST    = 1,
     MAIL_STATIONERY_DEFAULT = 41,
     MAIL_STATIONERY_GM      = 61,
-    MAIL_STATIONERY_AUCTION = 62,
+    //MAIL_STATIONERY_AUCTION = 62,
     MAIL_STATIONERY_VAL     = 64,                           // Valentine
     MAIL_STATIONERY_CHR     = 65,                           // Christmas
     MAIL_STATIONERY_ORP     = 67,                           // Orphan
@@ -85,7 +84,6 @@ class MailSender
         {
         }
         MailSender(Object* sender, MailStationery stationery = MAIL_STATIONERY_DEFAULT);
-        MailSender(AuctionEntry* sender);
         MailSender(Player* sender);
     public:                                                 // Accessors
         MailMessageType GetMailMessageType() const { return m_messageType; }

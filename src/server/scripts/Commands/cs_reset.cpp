@@ -22,7 +22,6 @@ Comment: All reset related commands
 Category: commandscripts
 EndScriptData */
 
-#include "AchievementMgr.h"
 #include "Chat.h"
 #include "Language.h"
 #include "ObjectAccessor.h"
@@ -39,7 +38,6 @@ public:
     {
         static std::vector<ChatCommand> resetCommandTable =
         {
-            { "achievements",   SEC_ADMINISTRATOR,  true,  &HandleResetAchievementsCommand,     "" },
             { "honor",          SEC_ADMINISTRATOR,  true,  &HandleResetHonorCommand,            "" },
             { "level",          SEC_ADMINISTRATOR,  true,  &HandleResetLevelCommand,            "" },
             { "spells",         SEC_ADMINISTRATOR,  true,  &HandleResetSpellsCommand,           "" },
@@ -54,21 +52,6 @@ public:
         return commandTable;
     }
 
-    static bool HandleResetAchievementsCommand(ChatHandler* handler, char const* args)
-    {
-        Player* target;
-        uint64 targetGuid;
-        if (!handler->extractPlayerTarget((char*)args, &target, &targetGuid))
-            return false;
-
-        if (target)
-            target->ResetAchievements();
-        else
-            AchievementMgr::DeleteFromDB(GUID_LOPART(targetGuid));
-
-        return true;
-    }
-
     static bool HandleResetHonorCommand(ChatHandler* handler, char const* args)
     {
         Player* target;
@@ -80,7 +63,6 @@ public:
         target->SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, 0);
         target->SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, 0);
         target->SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, 0);
-        target->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_EARN_HONORABLE_KILL);
 
         return true;
     }

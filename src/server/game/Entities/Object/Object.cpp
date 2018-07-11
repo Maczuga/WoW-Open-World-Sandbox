@@ -1787,7 +1787,7 @@ namespace Trinity
             void operator()(WorldPacket& data)
             {
                 char const* text = sObjectMgr->GetTrinityString(i_textId);
-                ChatHandler::BuildChatPacket(data, i_msgtype, i_language, i_object, i_target, text, 0, "");
+                ChatHandler::BuildChatPacket(data, i_msgtype, i_language, i_object, i_target, text, "");
             }
 
         private:
@@ -1806,7 +1806,7 @@ namespace Trinity
             {}
             void operator()(WorldPacket& data)
             {
-                ChatHandler::BuildChatPacket(data, i_msgtype, i_language, i_object, i_target, i_text, 0, "");
+                ChatHandler::BuildChatPacket(data, i_msgtype, i_language, i_object, i_target, i_text, "");
             }
 
         private:
@@ -1902,7 +1902,7 @@ void WorldObject::MonsterWhisper(const char* text, Player const* target, bool Is
         return;
 
     WorldPacket data;
-    ChatHandler::BuildChatPacket(data, IsBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, LANG_UNIVERSAL, this, target, text, 0, "");
+    ChatHandler::BuildChatPacket(data, IsBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, LANG_UNIVERSAL, this, target, text, "");
     target->GetSession()->SendPacket(&data);
 }
 
@@ -1913,7 +1913,7 @@ void WorldObject::MonsterWhisper(int32 textId, Player const* target, bool IsBoss
 
     char const* text = sObjectMgr->GetTrinityString(textId);
     WorldPacket data;
-    ChatHandler::BuildChatPacket(data, IsBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, LANG_UNIVERSAL, this, target, text, 0, "");
+    ChatHandler::BuildChatPacket(data, IsBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, LANG_UNIVERSAL, this, target, text, "");
 
     target->GetSession()->SendPacket(&data);
 }

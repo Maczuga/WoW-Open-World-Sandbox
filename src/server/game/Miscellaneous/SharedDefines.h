@@ -3048,8 +3048,8 @@ enum ChatMsg
     //CHAT_MSG_BATTLEGROUND_LEADER    = 0x2D,
     CHAT_MSG_RESTRICTED             = 0x2E,
     CHAT_MSG_BATTLENET              = 0x2F,
-    CHAT_MSG_ACHIEVEMENT            = 0x30,
-    CHAT_MSG_GUILD_ACHIEVEMENT      = 0x31,
+    //CHAT_MSG_ACHIEVEMENT            = 0x30,
+    //CHAT_MSG_GUILD_ACHIEVEMENT      = 0x31,
     CHAT_MSG_ARENA_POINTS           = 0x32,
     CHAT_MSG_PARTY_LEADER           = 0x33
 };

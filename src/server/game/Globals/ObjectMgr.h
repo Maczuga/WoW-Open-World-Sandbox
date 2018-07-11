@@ -634,8 +634,6 @@ class ObjectMgr
 
         typedef std::vector<std::string> ScriptNameContainer;
 
-        typedef std::map<uint32, uint32> CharacterConversionMap;
-
         GameObjectTemplate const* GetGameObjectTemplate(uint32 entry);
         bool IsGameObjectStaticTransport(uint32 entry);
         GameObjectTemplateContainer const* GetGameObjectTemplates() const { return &_gameObjectTemplateStore; }
@@ -1102,20 +1100,6 @@ class ObjectMgr
 
         // for wintergrasp only
         GraveyardContainer GraveyardStore;
-
-        CharacterConversionMap FactionChangeAchievements;
-        CharacterConversionMap FactionChangeItems;
-        CharacterConversionMap FactionChangeQuests;
-        CharacterConversionMap FactionChangeReputation;
-        CharacterConversionMap FactionChangeSpells;
-        CharacterConversionMap FactionChangeTitles;
-
-        void LoadFactionChangeAchievements();
-        void LoadFactionChangeItems();
-        void LoadFactionChangeQuests();
-        void LoadFactionChangeReputations();
-        void LoadFactionChangeSpells();
-        void LoadFactionChangeTitles();
 
     private:
         // first free id for selected id type

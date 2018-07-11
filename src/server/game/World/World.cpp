@@ -34,8 +34,6 @@
 #include "SkillDiscovery.h"
 #include "World.h"
 #include "AccountMgr.h"
-#include "AchievementMgr.h"
-#include "AuctionHouseMgr.h"
 #include "ObjectMgr.h"
 #include "GuildMgr.h"
 #include "SpellMgr.h"
@@ -73,7 +71,6 @@
 #include "AvgDiffTracker.h"
 #include "DynamicVisibility.h"
 #include "WhoListCache.h"
-#include "AsyncAuctionListing.h"
 #include "SavingSystem.h"
 #include <VMapManager2.h>
 
@@ -1376,23 +1373,7 @@ void World::SetInitialWorldSettings()
     sLog->outString("Loading Skill Fishing base level requirements...");
     sObjectMgr->LoadFishingBaseSkillLevel();
 
-    sLog->outString("Loading Achievements...");
-    sAchievementMgr->LoadAchievementReferenceList();
-    sLog->outString("Loading Achievement Criteria Lists...");
-    sAchievementMgr->LoadAchievementCriteriaList();
-    sLog->outString("Loading Achievement Criteria Data...");
-    sAchievementMgr->LoadAchievementCriteriaData();
-    sLog->outString("Loading Achievement Rewards...");
-    sAchievementMgr->LoadRewards();
-    sLog->outString("Loading Completed Achievements...");
-    sAchievementMgr->LoadCompletedAchievements();
-
     ///- Load dynamic data tables from the database
-    sLog->outString("Loading Item Auctions...");
-    sAuctionMgr->LoadAuctionItems();
-    sLog->outString("Loading Auctions...");
-    sAuctionMgr->LoadAuctions();
-
     sGuildMgr->LoadGuilds();
 
     sLog->outString("Loading Groups...");
@@ -1430,24 +1411,6 @@ void World::SetInitialWorldSettings()
 
     sLog->outString("Loading Conditions...");
     sConditionMgr->LoadConditions();
-
-    sLog->outString("Loading faction change achievement pairs...");
-    sObjectMgr->LoadFactionChangeAchievements();
-
-    sLog->outString("Loading faction change spell pairs...");
-    sObjectMgr->LoadFactionChangeSpells();
-
-    sLog->outString("Loading faction change item pairs...");
-    sObjectMgr->LoadFactionChangeItems();
-
-    sLog->outString("Loading faction change reputation pairs...");
-    sObjectMgr->LoadFactionChangeReputations();
-
-    sLog->outString("Loading faction change title pairs...");
-    sObjectMgr->LoadFactionChangeTitles();
-
-    sLog->outString("Loading faction change quest pairs...");
-    sObjectMgr->LoadFactionChangeQuests();
 
     sLog->outString("Loading client addons...");
     AddonMgr::LoadFromDB();
@@ -1492,8 +1455,6 @@ void World::SetInitialWorldSettings()
     m_startTime = m_gameTime;
 
     m_timers[WUPDATE_WEATHERS].SetInterval(1*IN_MILLISECONDS);
-    m_timers[WUPDATE_AUCTIONS].SetInterval(MINUTE*IN_MILLISECONDS);
-    m_timers[WUPDATE_AUCTIONS].SetCurrent(MINUTE*IN_MILLISECONDS);
     m_timers[WUPDATE_CORPSES].SetInterval(20 * MINUTE * IN_MILLISECONDS);
                                                             //erase corpses every 20 minutes
     m_timers[WUPDATE_CLEANDB].SetInterval(m_int_configs[CONFIG_LOGDB_CLEARINTERVAL]*MINUTE*IN_MILLISECONDS);
@@ -1642,34 +1603,18 @@ void World::Update(uint32 diff)
     if (m_gameTime > m_NextGuildReset)
         ResetGuildCap();
 
-	// pussywizard:
-	// acquire mutex now, this is kind of waiting for listing thread to finish it's work (since it can't process next packet)
-	// so we don't have to do it in every packet that modifies auctions
-	AsyncAuctionListingMgr::SetAuctionListingAllowed(false);
-	{
-		TRINITY_GUARD(ACE_Thread_Mutex, AsyncAuctionListingMgr::GetLock()); 
+    // pussywizard:
+    // acquire mutex now, this is kind of waiting for listing thread to finish it's work (since it can't process next packet)
+    // so we don't have to do it in every packet that modifies auctions
+    {
+        if (m_gameTime > mail_expire_check_timer)
+        {
+            sObjectMgr->ReturnOrDeleteOldMails(true);
+            mail_expire_check_timer = m_gameTime + 6 * 3600;
+        }
 
-		// pussywizard: handle auctions when the timer has passed
-		if (m_timers[WUPDATE_AUCTIONS].Passed())
-		{
-			m_timers[WUPDATE_AUCTIONS].Reset();
-
-			// pussywizard: handle expired auctions, auctions expired when realm was offline are also handled here (not during loading when many required things aren't loaded yet)
-			sAuctionMgr->Update();
-		}
-
-		AsyncAuctionListingMgr::Update(diff);
-
-		if (m_gameTime > mail_expire_check_timer)
-		{
-			sObjectMgr->ReturnOrDeleteOldMails(true);
-			mail_expire_check_timer = m_gameTime + 6*3600;
-		}
-
-		UpdateSessions(diff);
-	} 
-	// end of section with mutex
-	AsyncAuctionListingMgr::SetAuctionListingAllowed(true);
+        UpdateSessions(diff);
+    }
 
     /// <li> Handle weather updates when the timer has passed
     if (m_timers[WUPDATE_WEATHERS].Passed())

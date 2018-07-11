@@ -22,8 +22,6 @@ Comment: All reload related commands
 Category: commandscripts
 EndScriptData */
 
-#include "AchievementMgr.h"
-#include "AuctionHouseMgr.h"
 #include "Chat.h"
 #include "CreatureTextMgr.h"
 #include "DisableMgr.h"
@@ -45,7 +43,6 @@ public:
     {
         static std::vector<ChatCommand> reloadAllCommandTable =
         {
-            { "achievement", SEC_ADMINISTRATOR,  true,  &HandleReloadAllAchievementCommand, "" },
             { "area",       SEC_ADMINISTRATOR,  true,  &HandleReloadAllAreaCommand,       "" },
             { "gossips",    SEC_ADMINISTRATOR,  true,  &HandleReloadAllGossipsCommand,    "" },
             { "item",       SEC_ADMINISTRATOR,  true,  &HandleReloadAllItemCommand,       "" },
@@ -58,9 +55,6 @@ public:
         };
         static std::vector<ChatCommand> reloadCommandTable =
         {
-            { "auctions",                     SEC_ADMINISTRATOR, true,  &HandleReloadAuctionsCommand,                   "" },
-            { "achievement_criteria_data",    SEC_ADMINISTRATOR, true,  &HandleReloadAchievementCriteriaDataCommand,    "" },
-            { "achievement_reward",           SEC_ADMINISTRATOR, true,  &HandleReloadAchievementRewardCommand,          "" },
             { "all",                          SEC_ADMINISTRATOR, true,  NULL,                          "", reloadAllCommandTable },
             { "areatrigger_involvedrelation", SEC_ADMINISTRATOR, true,  &HandleReloadQuestAreaTriggersCommand,          "" },
             { "areatrigger_tavern",           SEC_ADMINISTRATOR, true,  &HandleReloadAreaTriggerTavernCommand,          "" },
@@ -139,7 +133,6 @@ public:
     {
         HandleReloadSkillFishingBaseLevelCommand(handler, "");
 
-        HandleReloadAllAchievementCommand(handler, "");
         HandleReloadAllAreaCommand(handler, "");
         HandleReloadAllLootCommand(handler, "");
         HandleReloadAllNpcCommand(handler, "");
@@ -155,13 +148,6 @@ public:
 
         HandleReloadVehicleAccessoryCommand(handler, "");
         HandleReloadVehicleTemplateAccessoryCommand(handler, "");
-        return true;
-    }
-
-    static bool HandleReloadAllAchievementCommand(ChatHandler* handler, const char* /*args*/)
-    {
-        HandleReloadAchievementCriteriaDataCommand(handler, "");
-        HandleReloadAchievementRewardCommand(handler, "");
         return true;
     }
 
@@ -264,22 +250,6 @@ public:
         sWorld->LoadConfigSettings(true);
         sMapMgr->InitializeVisibilityDistanceInfo();
         handler->SendGlobalGMSysMessage("World config settings reloaded.");
-        return true;
-    }
-
-    static bool HandleReloadAchievementCriteriaDataCommand(ChatHandler* handler, const char* /*args*/)
-    {
-        sLog->outString("Re-Loading Additional Achievement Criteria Data...");
-        sAchievementMgr->LoadAchievementCriteriaData();
-        handler->SendGlobalGMSysMessage("DB table `achievement_criteria_data` reloaded.");
-        return true;
-    }
-
-    static bool HandleReloadAchievementRewardCommand(ChatHandler* handler, const char* /*args*/)
-    {
-        sLog->outString("Re-Loading Achievement Reward Data...");
-        sAchievementMgr->LoadRewards();
-        handler->SendGlobalGMSysMessage("DB table `achievement_reward` reloaded.");
         return true;
     }
 
@@ -868,16 +838,6 @@ public:
         sLog->outString("Checking quest disables...");
         DisableMgr::CheckQuestDisables();
         handler->SendGlobalGMSysMessage("DB table `disables` reloaded.");
-        return true;
-    }
-
-    static bool HandleReloadAuctionsCommand(ChatHandler* handler, const char* /*args*/)
-    {
-        ///- Reload dynamic data tables from the database
-        sLog->outString("Re-Loading Auctions...");
-        sAuctionMgr->LoadAuctionItems();
-        sAuctionMgr->LoadAuctions();
-        handler->SendGlobalGMSysMessage("Auctions reloaded.");
         return true;
     }
 

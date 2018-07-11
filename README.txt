@@ -21,9 +21,11 @@ Also:
 - May be not working on other DBC files than enUS due to removed DBC locale system (as the plan is to avoid using DBC files at all costs)
 
 TODO: 
-- remove tutorials (mark at start as all read)
+- Map.h - dungeon/raid checks
 - disable achievement system at all
 - remove character conversions (faction/race)
+- remove who list (and implement nearby Actors command/listing)
 - Playerable NPCs
+- Name generation for units (first, 2nd* and last name)
 - NPC types (internal, for housings, trees, enviroment details)
 - Actor traits (for jobs and similar)

@@ -804,9 +804,9 @@ void Channel::Say(uint64 guid, std::string const& what, uint32 lang)
 
     WorldPacket data;
     if (player)
-        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), player, player, what, 0, _name);
+        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), player, player, what, _name);
     else
-        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), guid, guid, what, 0, "", "", 0, false, _name);
+        ChatHandler::BuildChatPacket(data, CHAT_MSG_CHANNEL, Language(lang), guid, guid, what, 0, "", "", false, _name);
 
     SendToAll(&data, pinfo.IsModerator() ? 0 : guid);
 }

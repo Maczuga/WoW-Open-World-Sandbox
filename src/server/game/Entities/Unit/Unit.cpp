@@ -836,13 +836,9 @@ uint32 Unit::DealDamage(Unit* attacker, Unit* victim, uint32 damage, CleanDamage
 			// pussywizard: don't allow GMs to deal damage in normal way (this leaves no evidence in logs!), they have commands to do so
 			//if (!allowGM && killer->GetSession()->GetSecurity() && killer->GetSession()->GetSecurity() <= SEC_ADMINISTRATOR)
 			//	return 0;
-
-			//killer->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HIT_DEALT, damage); // pussywizard: optimization
 		}
 
-    if (victim->GetTypeId() == TYPEID_PLAYER)
-        ;//victim->ToPlayer()->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_HIT_RECEIVED, damage); // pussywizard: optimization
-    else if (!victim->IsControlledByPlayer() || victim->IsVehicle())
+    if (!victim->IsControlledByPlayer() || victim->IsVehicle())
     {
         if (!victim->ToCreature()->hasLootRecipient())
             victim->ToCreature()->SetLootRecipient(attacker);
@@ -855,17 +851,11 @@ uint32 Unit::DealDamage(Unit* attacker, Unit* victim, uint32 damage, CleanDamage
     {
         ;//sLog->outStaticDebug("DealDamage: victim just died");
 
-        //if (attacker && victim->GetTypeId() == TYPEID_PLAYER && victim != attacker)
-            //victim->ToPlayer()->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_TOTAL_DAMAGE_RECEIVED, health); // pussywizard: optimization
-
 		Unit::Kill(attacker, victim, durabilityLoss, cleanDamage ? cleanDamage->attackType : BASE_ATTACK, spellProto);
     }
     else
     {
         ;//sLog->outStaticDebug("DealDamageAlive");
-
-        //if (victim->GetTypeId() == TYPEID_PLAYER)
-        //    victim->ToPlayer()->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_TOTAL_DAMAGE_RECEIVED, damage); // pussywizard: optimization
 
         victim->ModifyHealth(- (int32)damage);
 
@@ -16208,12 +16198,6 @@ void Unit::Kill(Unit* killer, Unit* victim, bool durabilityLoss, WeaponAttackTyp
     // Proc auras on death - must be before aura/combat remove
     victim->ProcDamageAndSpell(NULL, PROC_FLAG_DEATH, PROC_FLAG_NONE, PROC_EX_NONE, 0, attackType, spellProto);
 
-    // update get killing blow achievements, must be done before setDeathState to be able to require auras on target
-    // and before Spirit of Redemption as it also removes auras
-	if (killer)
-		if (Player* killerPlayer = killer->GetCharmerOrOwnerPlayerOrPlayerItself())
-			killerPlayer->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GET_KILLING_BLOWS, 1, 0, victim);
-
 	// Spirit of Redemption
     // if talent known but not triggered (check priest class for speedup check)
     bool spiritOfRedemption = false;
@@ -16329,15 +16313,6 @@ void Unit::Kill(Unit* killer, Unit* victim, bool durabilityLoss, WeaponAttackTyp
     //if (victim->GetTypeId() == TYPEID_PLAYER)
     //    if (OutdoorPvP* pvp = victim->ToPlayer()->GetOutdoorPvP())
     //        pvp->HandlePlayerActivityChangedpVictim->ToPlayer();
-
-    // achievement stuff
-    if (killer && victim->GetTypeId() == TYPEID_PLAYER)
-    {
-        if (killer->GetTypeId() == TYPEID_UNIT)
-            victim->ToPlayer()->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILLED_BY_CREATURE, killer->GetEntry());
-        else if (victim != killer && killer->GetTypeId() == TYPEID_PLAYER)
-            victim->ToPlayer()->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILLED_BY_PLAYER, 1, killer->ToPlayer()->GetTeamId());
-    }
 
     // Hook for OnPVPKill Event
 	if (killer)

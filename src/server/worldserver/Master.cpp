@@ -188,10 +188,6 @@ int Master::Run()
 
     ACE_Based::Thread rarThread(new RARunnable);
 
-	// pussywizard:
-	ACE_Based::Thread auctionLising_thread(new AuctionListingRunnable);
-	auctionLising_thread.setPriority(ACE_Based::High);
-
 #if defined(_WIN32) || defined(__linux__)
     
 
@@ -298,7 +294,6 @@ int Master::Run()
     // since worldrunnable uses them, it will crash if unloaded after master
     worldThread.wait();
     rarThread.wait();
-    auctionLising_thread.wait();
 
     if (soapThread)
     {

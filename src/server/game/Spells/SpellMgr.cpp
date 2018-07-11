@@ -4837,11 +4837,6 @@ void SpellMgr::LoadDbcDataCorrections()
 			spellInfo->EffectImplicitTargetA[0] = 25;
 			spellInfo->EffectImplicitTargetA[1] = 25;
 			break;
-		// Trial of the Champion, Eadric Achievement (The Faceroller)
-		case 68197:
-			spellInfo->EffectImplicitTargetB[0] = TARGET_UNIT_SRC_AREA_ALLY;
-			spellInfo->Attributes |= SPELL_ATTR0_CASTABLE_WHILE_DEAD;
-			break;
 		// Trial of the Champion, Earth Shield
 		case 67530:
 			spellInfo->EffectApplyAuraName[0] = SPELL_AURA_PROC_TRIGGER_SPELL; // will trigger 67537
@@ -5094,13 +5089,6 @@ void SpellMgr::LoadDbcDataCorrections()
 			spellInfo->EffectImplicitTargetA[0] = 25;
 			spellInfo->EffectImplicitTargetB[0] = 0;
 			break;
-		// Trial of the Crusader, Anub'arak, Achievements: The Traitor King
-		case 68186: // Anub'arak Scarab Achievement 10
-		case 68515: // Anub'arak Scarab Achievement 25
-			spellInfo->EffectImplicitTargetA[0] = TARGET_SRC_CASTER;
-			spellInfo->EffectImplicitTargetB[0] = TARGET_UNIT_SRC_AREA_ENEMY;
-			spellInfo->Attributes |= SPELL_ATTR0_CASTABLE_WHILE_DEAD;
-			break;
 		// Trial of the Crusader, Anub'arak, Spider Frenzy
 		case 66129:
 			spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
@@ -5265,10 +5253,6 @@ void SpellMgr::LoadDbcDataCorrections()
 		case 73035:
 		case 70719:
 			spellInfo->rangeIndex = 13;
-			break;
-		// Achievement Check
-		case 72830:
-			spellInfo->EffectRadiusIndex[0] = EFFECT_RADIUS_200_YARDS;
 			break;
 
 		//////////////////////////////////////////
@@ -5462,10 +5446,6 @@ void SpellMgr::LoadDbcDataCorrections()
             break;
         case 70602: // Corruption
             spellInfo->AttributesEx3 |= SPELL_ATTR3_STACK_FOR_DIFF_CASTERS;
-            break;
-        case 72706: // Achievement Check (Valithria Dreamwalker)
-        case 71357: // Order Whelp
-            spellInfo->EffectRadiusIndex[0] = EFFECT_RADIUS_200_YARDS;   // 200yd
             break;
         case 70598: // Sindragosa's Fury
             spellInfo->EffectImplicitTargetA[0] = TARGET_DEST_DEST;
@@ -6215,13 +6195,6 @@ void SpellMgr::LoadDbcDataCorrections()
 	vse = const_cast<VehicleSeatEntry*>(sVehicleSeatStore.LookupEntry(2845));
 	vse->m_attachmentOffsetX += 0.0f;
 	vse->m_attachmentOffsetY += 1.6f;
-
-
-
-	// Once Bitten, Twice Shy (10 player) - Icecrown Citadel
-    AchievementEntry* achievement = const_cast<AchievementEntry*>(sAchievementStore.LookupEntry(4539));
-    achievement->mapID = 631;    // Correct map requirement (currently has Ulduar)
-
 
 	// Ring of Valor starting Locations
 	WorldSafeLocsEntry const* entry = sWorldSafeLocsStore.LookupEntry(1364);

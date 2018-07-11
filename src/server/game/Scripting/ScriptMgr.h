@@ -30,7 +30,6 @@
 #include "World.h"
 #include "Weather.h"
 
-class AuctionHouseObject;
 class AuraScript;
 class Battleground;
 class BattlegroundMap;
@@ -63,8 +62,6 @@ class WorldPacket;
 class WorldSocket;
 class WorldObject;
 
-struct AchievementCriteriaData;
-struct AuctionEntry;
 struct ConditionSourceInfo;
 struct Condition;
 struct ItemTemplate;
@@ -481,27 +478,6 @@ class WeatherScript : public ScriptObject, public UpdatableScript<Weather>
         virtual void OnChange(Weather* /*weather*/, WeatherState /*state*/, float /*grade*/) { }
 };
 
-class AuctionHouseScript : public ScriptObject
-{
-    protected:
-
-        AuctionHouseScript(const char* name);
-
-    public:
-
-        // Called when an auction is added to an auction house.
-        virtual void OnAuctionAdd(AuctionHouseObject* /*ah*/, AuctionEntry* /*entry*/) { }
-
-        // Called when an auction is removed from an auction house.
-        virtual void OnAuctionRemove(AuctionHouseObject* /*ah*/, AuctionEntry* /*entry*/) { }
-
-        // Called when an auction was succesfully completed.
-        virtual void OnAuctionSuccessful(AuctionHouseObject* /*ah*/, AuctionEntry* /*entry*/) { }
-
-        // Called when an auction expires.
-        virtual void OnAuctionExpire(AuctionHouseObject* /*ah*/, AuctionEntry* /*entry*/) { }
-};
-
 class ConditionScript : public ScriptObject
 {
     protected:
@@ -571,20 +547,6 @@ class TransportScript : public ScriptObject, public UpdatableScript<Transport>
 
         // Called when a transport moves.
         virtual void OnRelocate(Transport* /*transport*/, uint32 /*waypointId*/, uint32 /*mapId*/, float /*x*/, float /*y*/, float /*z*/) { }
-};
-
-class AchievementCriteriaScript : public ScriptObject
-{
-    protected:
-
-        AchievementCriteriaScript(const char* name);
-
-    public:
-
-        bool IsDatabaseBound() const { return true; }
-
-        // Called when an additional criteria is checked.
-        virtual bool OnCheck(Player* source, Unit* target) = 0;
 };
 
 class PlayerScript : public ScriptObject
@@ -859,13 +821,6 @@ class ScriptMgr
         void OnWeatherChange(Weather* weather, WeatherState state, float grade);
         void OnWeatherUpdate(Weather* weather, uint32 diff);
 
-    public: /* AuctionHouseScript */
-
-        void OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* entry);
-        void OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* entry);
-        void OnAuctionSuccessful(AuctionHouseObject* ah, AuctionEntry* entry);
-        void OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* entry);
-
     public: /* ConditionScript */
 
         bool OnConditionCheck(Condition* condition, ConditionSourceInfo& sourceInfo);
@@ -890,10 +845,6 @@ class ScriptMgr
         void OnRemovePassenger(Transport* transport, Player* player);
         void OnTransportUpdate(Transport* transport, uint32 diff);
         void OnRelocate(Transport* transport, uint32 waypointId, uint32 mapId, float x, float y, float z);
-
-    public: /* AchievementCriteriaScript */
-
-        bool OnCriteriaCheck(uint32 scriptId, Player* source, Unit* target);
 
     public: /* PlayerScript */
 

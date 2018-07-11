@@ -201,12 +201,10 @@ void ScriptMgr::Initialize()
                 !ScriptRegistry<AreaTriggerScript>::GetScriptById(sid) &&
                 !ScriptRegistry<CommandScript>::GetScriptById(sid) &&
                 !ScriptRegistry<WeatherScript>::GetScriptById(sid) &&
-                !ScriptRegistry<AuctionHouseScript>::GetScriptById(sid) &&
                 !ScriptRegistry<ConditionScript>::GetScriptById(sid) &&
                 !ScriptRegistry<VehicleScript>::GetScriptById(sid) &&
                 !ScriptRegistry<DynamicObjectScript>::GetScriptById(sid) &&
                 !ScriptRegistry<TransportScript>::GetScriptById(sid) &&
-                !ScriptRegistry<AchievementCriteriaScript>::GetScriptById(sid) &&
                 !ScriptRegistry<PlayerScript>::GetScriptById(sid) &&
                 !ScriptRegistry<GuildScript>::GetScriptById(sid) &&
                 !ScriptRegistry<GroupScript>::GetScriptById(sid))
@@ -237,12 +235,10 @@ void ScriptMgr::Unload()
     SCR_CLEAR(AreaTriggerScript);
     SCR_CLEAR(CommandScript);
     SCR_CLEAR(WeatherScript);
-    SCR_CLEAR(AuctionHouseScript);
     SCR_CLEAR(ConditionScript);
     SCR_CLEAR(VehicleScript);
     SCR_CLEAR(DynamicObjectScript);
     SCR_CLEAR(TransportScript);
-    SCR_CLEAR(AchievementCriteriaScript);
     SCR_CLEAR(PlayerScript);
     SCR_CLEAR(GuildScript);
     SCR_CLEAR(GroupScript);
@@ -859,38 +855,6 @@ void ScriptMgr::OnWeatherUpdate(Weather* weather, uint32 diff)
     tmpscript->OnUpdate(weather, diff);
 }
 
-void ScriptMgr::OnAuctionAdd(AuctionHouseObject* ah, AuctionEntry* entry)
-{
-    ASSERT(ah);
-    ASSERT(entry);
-
-    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionAdd(ah, entry);
-}
-
-void ScriptMgr::OnAuctionRemove(AuctionHouseObject* ah, AuctionEntry* entry)
-{
-    ASSERT(ah);
-    ASSERT(entry);
-
-    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionRemove(ah, entry);
-}
-
-void ScriptMgr::OnAuctionSuccessful(AuctionHouseObject* ah, AuctionEntry* entry)
-{
-    ASSERT(ah);
-    ASSERT(entry);
-
-    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionSuccessful(ah, entry);
-}
-
-void ScriptMgr::OnAuctionExpire(AuctionHouseObject* ah, AuctionEntry* entry)
-{
-    ASSERT(ah);
-    ASSERT(entry);
-
-    FOREACH_SCRIPT(AuctionHouseScript)->OnAuctionExpire(ah, entry);
-}
-
 bool ScriptMgr::OnConditionCheck(Condition* condition, ConditionSourceInfo& sourceInfo)
 {
     ASSERT(condition);
@@ -1013,15 +977,6 @@ void ScriptMgr::OnStartup()
 void ScriptMgr::OnShutdown()
 {
     FOREACH_SCRIPT(WorldScript)->OnShutdown();
-}
-
-bool ScriptMgr::OnCriteriaCheck(uint32 scriptId, Player* source, Unit* target)
-{
-    ASSERT(source);
-    // target can be NULL.
-
-    GET_SCRIPT_RET(AchievementCriteriaScript, scriptId, tmpscript, false);
-    return tmpscript->OnCheck(source, target);
 }
 
 // Player
@@ -1287,12 +1242,6 @@ WeatherScript::WeatherScript(const char* name)
     ScriptRegistry<WeatherScript>::AddScript(this);
 }
 
-AuctionHouseScript::AuctionHouseScript(const char* name)
-    : ScriptObject(name)
-{
-    ScriptRegistry<AuctionHouseScript>::AddScript(this);
-}
-
 ConditionScript::ConditionScript(const char* name)
     : ScriptObject(name)
 {
@@ -1315,12 +1264,6 @@ TransportScript::TransportScript(const char* name)
     : ScriptObject(name)
 {
     ScriptRegistry<TransportScript>::AddScript(this);
-}
-
-AchievementCriteriaScript::AchievementCriteriaScript(const char* name)
-    : ScriptObject(name)
-{
-    ScriptRegistry<AchievementCriteriaScript>::AddScript(this);
 }
 
 PlayerScript::PlayerScript(const char* name)
@@ -1357,12 +1300,10 @@ template class ScriptRegistry<GameObjectScript>;
 template class ScriptRegistry<AreaTriggerScript>;
 template class ScriptRegistry<CommandScript>;
 template class ScriptRegistry<WeatherScript>;
-template class ScriptRegistry<AuctionHouseScript>;
 template class ScriptRegistry<ConditionScript>;
 template class ScriptRegistry<VehicleScript>;
 template class ScriptRegistry<DynamicObjectScript>;
 template class ScriptRegistry<TransportScript>;
-template class ScriptRegistry<AchievementCriteriaScript>;
 template class ScriptRegistry<PlayerScript>;
 template class ScriptRegistry<GuildScript>;
 template class ScriptRegistry<GroupScript>;

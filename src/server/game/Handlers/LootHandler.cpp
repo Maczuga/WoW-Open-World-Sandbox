@@ -189,7 +189,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket & /*recvData*/)
             for (std::vector<Player*>::const_iterator i = playersNear.begin(); i != playersNear.end(); ++i)
             {
                 (*i)->ModifyMoney(goldPerPlayer);
-                (*i)->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, goldPerPlayer);
 
                 WorldPacket data(SMSG_LOOT_MONEY_NOTIFY, 4 + 1);
                 data << uint32(goldPerPlayer);
@@ -200,7 +199,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket & /*recvData*/)
         else
         {
             player->ModifyMoney(loot->gold);
-            player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, loot->gold);
 
             WorldPacket data(SMSG_LOOT_MONEY_NOTIFY, 4 + 1);
             data << uint32(loot->gold);
@@ -488,7 +486,6 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
     // not move item from loot to target inventory
     Item* newitem = target->StoreNewItem(dest, item.itemid, true, item.randomPropertyId, looters);
     target->SendNewItem(newitem, uint32(item.count), false, false, true);
-    target->UpdateLootAchievements(&item, loot);
 
     // mark as looted
     item.count=0;

@@ -47,7 +47,6 @@ class WorldPacket;
 class WorldSocket;
 class AsynchPetSummon;
 struct AreaTableEntry;
-struct AuctionEntry;
 struct DeclinedName;
 struct ItemTemplate;
 struct MovementInfo;
@@ -269,11 +268,6 @@ class WorldSession
 
         //used with item_page table
         bool SendItemInfo(uint32 itemid, WorldPacket data);
-        //auction
-        void SendAuctionHello(uint64 guid, Creature* unit);
-        void SendAuctionCommandResult(uint32 auctionId, uint32 Action, uint32 ErrorCode, uint32 bidError = 0);
-        void SendAuctionBidderNotification(uint32 location, uint32 auctionId, uint64 bidder, uint32 bidSum, uint32 diff, uint32 item_template);
-        void SendAuctionOwnerNotification(AuctionEntry* auction);
 
         //Item Enchantment
         void SendEnchantmentLog(uint64 target, uint64 caster, uint32 itemId, uint32 enchantId);
@@ -335,7 +329,6 @@ class WorldSession
         void HandlePlayerLoginFromDB(LoginQueryHolder * holder);
 		void HandlePlayerLoginToCharInWorld(Player* pCurrChar);
 		void HandlePlayerLoginToCharOutOfWorld(Player* pCurrChar);
-        void HandleCharFactionOrRaceChange(WorldPacket& recvData);
 
         // played time
         void HandlePlayedTime(WorldPacket& recvPacket);
@@ -502,16 +495,6 @@ class WorldSession
         void HandleSetTradeGoldOpcode(WorldPacket& recvPacket);
         void HandleSetTradeItemOpcode(WorldPacket& recvPacket);
         void HandleUnacceptTradeOpcode(WorldPacket& recvPacket);
-
-        void HandleAuctionHelloOpcode(WorldPacket& recvPacket);
-        void HandleAuctionListItems(WorldPacket& recvData);
-        void HandleAuctionListBidderItems(WorldPacket& recvData);
-        void HandleAuctionSellItem(WorldPacket& recvData);
-        void HandleAuctionRemoveItem(WorldPacket& recvData);
-        void HandleAuctionListOwnerItems(WorldPacket& recvData);
-        void HandleAuctionListOwnerItemsEvent(WorldPacket & recvData);
-        void HandleAuctionPlaceBid(WorldPacket& recvData);
-        void HandleAuctionListPendingSales(WorldPacket& recvData);
 
         void HandleGetMailList(WorldPacket& recvData);
         void HandleSendMail(WorldPacket& recvData);
@@ -689,7 +672,6 @@ class WorldSession
         void HandleAlterAppearance(WorldPacket& recvData);
         void HandleRemoveGlyph(WorldPacket& recvData);
         void HandleCharCustomize(WorldPacket& recvData);
-        void HandleQueryInspectAchievements(WorldPacket& recvData);
         void HandleEquipmentSetSave(WorldPacket& recvData);
         void HandleEquipmentSetDelete(WorldPacket& recvData);
         void HandleEquipmentSetUse(WorldPacket& recvData);

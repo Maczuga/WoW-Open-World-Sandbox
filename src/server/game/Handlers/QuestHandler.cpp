@@ -396,14 +396,11 @@ void WorldSession::HandleQuestLogRemoveQuest(WorldPacket& recvData)
 
             _player->TakeQuestSourceItem(questId, true); // remove quest src item from player
             _player->RemoveActiveQuest(questId);
-            _player->RemoveTimedAchievement(ACHIEVEMENT_TIMED_TYPE_QUEST, questId);
 
             ;//sLog->outDetail("Player %u abandoned quest %u", _player->GetGUIDLow(), questId);
         }
 
         _player->SetQuestSlot(slot, 0);
-
-        _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_QUEST_ABANDONED, 1);
     }
 }
 
