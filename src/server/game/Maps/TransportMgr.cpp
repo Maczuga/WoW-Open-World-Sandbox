@@ -166,15 +166,7 @@ void TransportMgr::GeneratePath(GameObjectTemplate const* goInfo, TransportTempl
 
     ASSERT(!keyFrames.empty());
 
-    if (transport->mapsUsed.size() > 1)
-    {
-        for (std::set<uint32>::const_iterator itr = transport->mapsUsed.begin(); itr != transport->mapsUsed.end(); ++itr)
-            ASSERT(!sMapStore.LookupEntry(*itr)->Instanceable());
-
-        transport->inInstance = false;
-    }
-    else
-        transport->inInstance = sMapStore.LookupEntry(*transport->mapsUsed.begin())->Instanceable();
+    transport->inInstance = false;
 
     // last to first is always "teleport", even for closed paths
     keyFrames.back().Teleport = true;
@@ -384,7 +376,7 @@ MotionTransport* TransportMgr::CreateTransport(uint32 entry, uint32 guid /*= 0*/
 
     if (MapEntry const* mapEntry = sMapStore.LookupEntry(mapId))
     {
-        if (mapEntry->Instanceable() != tInfo->inInstance)
+        if (tInfo->inInstance)
         {
             sLog->outError("Transport %u (name: %s) attempted creation in instance map (id: %u) but it is not an instanced transport!", entry, trans->GetName().c_str(), mapId);
             delete trans;
@@ -441,7 +433,7 @@ void TransportMgr::SpawnContinentTransports()
             float y = fields[2].GetFloat();
 
             MapEntry const* mapEntry = sMapStore.LookupEntry(mapId);
-			if (mapEntry && !mapEntry->Instanceable())
+			if (mapEntry)
 				if (Map* map = sMapMgr->CreateBaseMap(mapId))
 				{
 					map->LoadGrid(x, y);

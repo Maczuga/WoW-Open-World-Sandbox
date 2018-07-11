@@ -130,23 +130,6 @@ void WorldSession::HandleMoveWorldportAckOpcode()
 
     GetPlayer()->SendInitialPacketsAfterAddToMap();
 
-    // resurrect character at enter into instance where his corpse exist after add to map
-    Corpse* corpse = GetPlayer()->GetCorpse();
-    if (corpse && corpse->GetType() != CORPSE_BONES && corpse->GetMapId() == GetPlayer()->GetMapId())
-    {
-        if (mEntry->IsDungeon())
-        {
-            GetPlayer()->ResurrectPlayer(0.5f, false);
-            GetPlayer()->SpawnCorpseBones();
-        }
-    }
-
-    bool allowMount = !mEntry->IsDungeon() || mEntry->IsBattlegroundOrArena();
-
-    // mount allow check
-    if (!allowMount)
-        _player->RemoveAurasByType(SPELL_AURA_MOUNTED);
-
     // update zone immediately, otherwise leave channel will cause crash in mtmap
     uint32 newzone, newarea;
     GetPlayer()->GetZoneAndAreaId(newzone, newarea, true);

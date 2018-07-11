@@ -39,7 +39,7 @@ enum DebugLogFilters
     LOG_FILTER_CONDITIONSYS             = 0x00000200,
     LOG_FILTER_POOLSYS                  = 0x00000400,
     LOG_FILTER_AUCTIONHOUSE             = 0x00000800,
-    LOG_FILTER_BATTLEGROUND             = 0x00001000,   // Anything related to arena's and battlegrounds
+    //LOG_FILTER_BATTLEGROUND             = 0x00001000,   // Anything related to arena's and battlegrounds
     //LOG_FILTER_OUTDOORPVP               = 0x00002000,
     LOG_FILTER_CHATSYS                  = 0x00004000,
     LOG_FILTER_LFG                      = 0x00008000,

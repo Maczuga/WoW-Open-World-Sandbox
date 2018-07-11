@@ -25,8 +25,6 @@
 
 #define CAST_AI(a, b)   (dynamic_cast<a*>(b))
 
-class InstanceScript;
-
 class SummonList
 {
 public:

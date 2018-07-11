@@ -113,7 +113,6 @@ class ByteBuffer;
 class WorldSession;
 class Creature;
 class Player;
-class InstanceScript;
 class GameObject;
 class TempSummon;
 class Vehicle;

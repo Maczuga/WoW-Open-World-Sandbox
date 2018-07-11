@@ -21,9 +21,7 @@ Also:
 - May be not working on other DBC files than enUS due to removed DBC locale system (as the plan is to avoid using DBC files at all costs)
 
 TODO: 
-- Map.h - dungeon/raid checks
-- disable achievement system at all
-- remove character conversions (faction/race)
+- remove linked respawn (used only in instancable maps)
 - remove who list (and implement nearby Actors command/listing)
 - Playerable NPCs
 - Name generation for units (first, 2nd* and last name)

@@ -582,7 +582,6 @@ void KillRewarder::_RewardGroup()
         // (battleground rewards only XP, that's why).
         if (_xp)
         {
-            const bool isDungeon = sMapStore.LookupEntry(_killer->GetMapId())->IsDungeon();
             _groupRate = Trinity::XP::xp_in_group_rate(_count);
 
             // 3.1.3. Reward each group member (even dead or corpse) within reward distance.
@@ -2283,7 +2282,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
                 oldmap->RemovePlayerFromMap(this, false);
 
 			// xinef: do this before setting fall information!
-			if (IsMounted() && (!GetMap()->GetEntry()->IsDungeon() && !GetMap()->GetEntry()->IsBattlegroundOrArena()))
+			if (IsMounted())
 			{
 				AuraEffectList const& auras = GetAuraEffectsByType(SPELL_AURA_MOUNTED);
 				if (!auras.empty())
@@ -4776,10 +4775,6 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ENTRY_POINT);
-            stmt->setUInt32(0, guid);
-            trans->Append(stmt);
-
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_GLYPHS);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
@@ -5024,7 +5019,7 @@ void Player::KillPlayer()
     //SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_IN_PVP);
 
     SetUInt32Value(UNIT_DYNAMIC_FLAGS, UNIT_DYNFLAG_NONE);
-    ApplyModFlag(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTE_RELEASE_TIMER, !sMapStore.LookupEntry(GetMapId())->Instanceable() && !HasAuraType(SPELL_AURA_PREVENT_RESURRECTION));
+    ApplyModFlag(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTE_RELEASE_TIMER, false);
 
     // 6 minutes until repop at graveyard
     m_deathTimer = 6 * MINUTE * IN_MILLISECONDS;
@@ -16478,40 +16473,6 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
         sLog->outError("Player (guidlow %d) have invalid coordinates (MapId: %u X: %f Y: %f Z: %f O: %f). Teleport to default race/class locations.", guid, mapId, GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation());
         RelocateToHomebind();
     }
-    // Player was saved in Arena or Bg
-    else if (mapEntry->IsBattlegroundOrArena())
-    {
-        // xinef: resurrect player, cant log in dead without corpse
-        {
-            if (HasAuraType(SPELL_AURA_SPIRIT_OF_REDEMPTION))
-                RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
-            if (!IsAlive())
-                ResurrectPlayer(1.0f);
-        }
-
-        const WorldLocation& _loc = GetEntryPoint();
-        mapId = _loc.GetMapId();
-		instanceId = 0;
-
-        if (mapId == MAPID_INVALID)
-		{
-            RelocateToHomebind();
-		}
-        else
-		{
-            Relocate(&_loc);
-
-			// xinef: restore taxi flight from entry point data
-			if (m_entryPointData.HasTaxiPath())
-			{
-				for (size_t i = 0; i < m_entryPointData.taxiPath.size() - 1; ++i)
-					m_taxi.AddTaxiDestination(m_entryPointData.taxiPath[i]);
-				m_taxi.SetTaxiSegment(m_entryPointData.taxiPath[m_entryPointData.taxiPath.size() - 1]);
-
-				m_entryPointData.ClearTaxiPath();
-			}
-		}
-    }
     // currently we do not support transport in bg
     else if (transLowGUID)
     {
@@ -16549,17 +16510,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
             }
         }
         else
-		{
-			bool fixed = false;
-			if (mapEntry->Instanceable())
-				if (AreaTrigger const* at = sObjectMgr->GetMapEntranceTrigger(mapId))
-				{
-					fixed = true;
-					Relocate(at->target_X, at->target_Y, at->target_Z, at->target_Orientation);
-				}
-			if (!fixed)
-				RelocateToHomebind();
-		}
+		    RelocateToHomebind();
     }
     // currently we do not support taxi in instance
     else if (!taxi_nodes.empty())
@@ -17057,7 +17008,7 @@ void Player::LoadCorpse()
     else
     {
         if (Corpse* corpse = GetCorpse())
-            ApplyModFlag(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTE_RELEASE_TIMER, corpse && !sMapStore.LookupEntry(corpse->GetMapId())->Instanceable());
+            ApplyModFlag(PLAYER_FIELD_BYTES, PLAYER_FIELD_BYTE_RELEASE_TIMER, corpse);
         else
             //Prevent Dead Player login without corpse
             ResurrectPlayer(0.5f);
@@ -17837,7 +17788,7 @@ bool Player::_LoadHomeBind(PreparedQueryResult result)
 
         // accept saved data only for valid position (and non instanceable), and accessable
         if (MapManager::IsValidMapCoord(m_homebindMapId, m_homebindX, m_homebindY, m_homebindZ) &&
-            !bindMapEntry->Instanceable() && GetSession()->Expansion() >= bindMapEntry->Expansion())
+            GetSession()->Expansion() >= bindMapEntry->Expansion())
             ok = true;
         else
         {
@@ -17901,7 +17852,6 @@ void Player::SaveToDB(bool create, bool logout)
     if (m_mailsUpdated)                                     //save mails only when needed
         _SaveMail(trans);
 
-    _SaveEntryPoint(trans);
     _SaveInventory(trans);
     _SaveQuestStatus(trans);
     _SaveDailyQuestStatus(trans);
@@ -20863,7 +20813,7 @@ void Player::SendInitialPacketsBeforeAddToMap()
     // SMSG_INSTANCE_DIFFICULTY
     data.Initialize(SMSG_INSTANCE_DIFFICULTY, 4+4);
     data << uint32(GetMap()->GetDifficulty());
-    data << uint32(GetMap()->GetEntry()->IsDynamicDifficultyMap()); // Raid dynamic difficulty
+    data << uint32(0); // Raid dynamic difficulty
     GetSession()->SendPacket(&data);
 
     SendInitialSpells();
@@ -20978,28 +20928,6 @@ void Player::SendTransferAborted(uint32 mapid, TransferAbortReason reason, uint8
         default:
             break;
     }
-    GetSession()->SendPacket(&data);
-}
-
-void Player::SendInstanceResetWarning(uint32 mapid, Difficulty difficulty, uint32 time, bool onEnterMap)
-{ 
-    // type of warning, based on the time remaining until reset
-    uint32 type;
-    if (time > 3600)
-        type = RAID_INSTANCE_WELCOME;
-    else if (time > 900)
-        type = RAID_INSTANCE_WARNING_HOURS;
-    else if (time > 300)
-        type = RAID_INSTANCE_WARNING_MIN;
-    else
-        type = RAID_INSTANCE_WARNING_MIN_SOON;
-
-    WorldPacket data(SMSG_RAID_INSTANCE_MESSAGE, 4+4+4+4);
-    data << uint32(type);
-    data << uint32(mapid);
-    data << uint32(difficulty);                             // difficulty
-    data << uint32(time);
-
     GetSession()->SendPacket(&data);
 }
 
@@ -23595,36 +23523,6 @@ void Player::_SaveEquipmentSets(SQLTransaction& trans)
                 break;
         }
     }
-}
-
-void Player::_SaveEntryPoint(SQLTransaction& trans)
-{ 
-	// xinef: dont save joinpos with invalid mapid
-	MapEntry const* mEntry = sMapStore.LookupEntry(m_entryPointData.joinPos.GetMapId());
-	if (!mEntry)
-		return;
-
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PLAYER_ENTRY_POINT);
-    stmt->setUInt32(0, GetGUIDLow());
-    trans->Append(stmt);
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_PLAYER_ENTRY_POINT);
-    stmt->setUInt32(0, GetGUIDLow());
-    stmt->setFloat (1, m_entryPointData.joinPos.GetPositionX());
-    stmt->setFloat (2, m_entryPointData.joinPos.GetPositionY());
-    stmt->setFloat (3, m_entryPointData.joinPos.GetPositionZ());
-    stmt->setFloat (4, m_entryPointData.joinPos.GetOrientation());
-    stmt->setUInt32(5, m_entryPointData.joinPos.GetMapId());
-
-	std::ostringstream ss("");
-	if (m_entryPointData.HasTaxiPath())
-	{
-		for (size_t i = 0; i < m_entryPointData.taxiPath.size(); ++i)
-			ss << m_entryPointData.taxiPath[i] << ' '; // xinef: segment is stored as last point
-	}
-
-    stmt->setString(6, ss.str());
-    stmt->setUInt32(7, m_entryPointData.mountSpell);
-    trans->Append(stmt);
 }
 
 void Player::DeleteEquipmentSet(uint64 setGuid)

@@ -41,9 +41,7 @@
 
 class Unit;
 class WorldPacket;
-class InstanceScript;
 class Group;
-class InstanceSave;
 class Object;
 class WorldObject;
 class TempSummon;

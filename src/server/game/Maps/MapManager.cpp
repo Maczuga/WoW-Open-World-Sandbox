@@ -115,53 +115,6 @@ bool MapManager::CanPlayerEnter(uint32 mapid, Player* player, bool loginCheck)
     if (!entry)
        return false;
 
-    if (!entry->IsDungeon())
-        return true;
-
-    Difficulty targetDifficulty, requestedDifficulty;
-    targetDifficulty = requestedDifficulty = Difficulty(0);
-
-    //Bypass checks for GMs
-    if (player->IsGameMaster())
-        return true;
-
-    // Maczuga: Crash fix
-    if (player->GetSession() != nullptr)
-        return true;
-
-    char const* mapName = entry->name[player->GetSession()->GetSessionDbcLocale()];
-
-    Group* group = player->GetGroup();
-
-    if (!player->IsAlive())
-    {
-        if (Corpse* corpse = player->GetCorpse())
-        {
-            // let enter in ghost mode in instance that connected to inner instance with corpse
-            uint32 corpseMap = corpse->GetMapId();
-            do
-            {
-                if (corpseMap == mapid)
-                    break;
-
-                corpseMap = 0;
-            } while (corpseMap);
-
-            if (!corpseMap)
-            {
-                WorldPacket data(SMSG_CORPSE_NOT_IN_INSTANCE, 0);
-                player->GetSession()->SendPacket(&data);
-                ;//sLog->outDebug(LOG_FILTER_MAPS, "MAP: Player '%s' does not have a corpse in instance '%s' and cannot enter.", player->GetName().c_str(), mapName);
-                return false;
-            }
-            ;//sLog->outDebug(LOG_FILTER_MAPS, "MAP: Player '%s' has corpse in instance '%s' and can enter.", player->GetName().c_str(), mapName);
-            player->ResurrectPlayer(0.5f, false);
-            player->SpawnCorpseBones();
-        }
-        else
-            ;//sLog->outDebug(LOG_FILTER_MAPS, "Map::CanPlayerEnter - player '%s' is dead but does not have a corpse!", player->GetName().c_str());
-    }
-
     return true;
 }
 

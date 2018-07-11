@@ -32,12 +32,6 @@
 // also see MAX_LEVEL and GT_MAX_LEVEL define
 #define STRONG_MAX_LEVEL 255
 
-enum BattlegroundBracketId                                  // bracketId for level ranges
-{
-    BG_BRACKET_ID_FIRST          = 0,
-    BG_BRACKET_ID_LAST           = 15
-};
-
 enum AreaTeams
 {
     AREATEAM_NONE  = 0,
@@ -108,15 +102,10 @@ enum FactionMasks
 enum MapTypes                                               // Lua_IsInInstance
 {
     MAP_COMMON          = 0,                                // none
-    MAP_INSTANCE        = 1,                                // party
-    MAP_RAID            = 2,                                // raid
-    MAP_BATTLEGROUND    = 3,                                // pvp
-    MAP_ARENA           = 4                                 // arena
-};
-
-enum MapFlags
-{
-    MAP_FLAG_DYNAMIC_DIFFICULTY = 0x100
+    // MAP_INSTANCE        = 1,                                // party
+    // MAP_RAID            = 2,                                // raid
+    // MAP_BATTLEGROUND    = 3,                                // pvp
+    // MAP_ARENA           = 4                                 // arena
 };
 
 enum AbilytyLearnType

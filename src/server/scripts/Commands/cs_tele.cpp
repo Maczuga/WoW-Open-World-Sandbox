@@ -236,14 +236,6 @@ public:
             return false;
         }
 
-        MapEntry const* map = sMapStore.LookupEntry(tele->mapId);
-        if (!map || map->IsBattlegroundOrArena())
-        {
-            handler->SendSysMessage(LANG_CANNOT_TELE_TO_BG);
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
-
         std::string nameLink = handler->GetNameLink(target);
 
         Group* grp = target->GetGroup();
@@ -313,14 +305,6 @@ public:
         if (me->IsInCombat())
         {
             handler->SendSysMessage(LANG_YOU_IN_COMBAT);
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
-
-        MapEntry const* map = sMapStore.LookupEntry(tele->mapId);
-        if (!map || map->IsBattlegroundOrArena())
-        {
-            handler->SendSysMessage(LANG_CANNOT_TELE_TO_BG);
             handler->SetSentErrorMessage(true);
             return false;
         }

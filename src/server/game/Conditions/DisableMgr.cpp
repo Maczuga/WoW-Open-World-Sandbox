@@ -141,36 +141,10 @@ void LoadDisables()
                     sLog->outErrorDb("Map entry %u from `disables` doesn't exist in dbc, skipped.", entry);
                     continue;
                 }
-                switch (mapEntry->map_type)
-                {
-                    case MAP_COMMON:
-                        if (flags & VMAP_DISABLE_AREAFLAG)
-                            sLog->outString("Areaflag disabled for world map %u.", entry);
-                        if (flags & VMAP_DISABLE_LIQUIDSTATUS)
-                            sLog->outString("Liquid status disabled for world map %u.", entry);
-                        break;
-                    case MAP_INSTANCE:
-                    case MAP_RAID:
-                        if (flags & VMAP_DISABLE_HEIGHT)
-                            sLog->outString("Height disabled for instance map %u.", entry);
-                        if (flags & VMAP_DISABLE_LOS)
-                            sLog->outString("LoS disabled for instance map %u.", entry);
-                        break;
-                    case MAP_BATTLEGROUND:
-                        if (flags & VMAP_DISABLE_HEIGHT)
-                            sLog->outString("Height disabled for battleground map %u.", entry);
-                        if (flags & VMAP_DISABLE_LOS)
-                            sLog->outString("LoS disabled for battleground map %u.", entry);
-                        break;
-                    case MAP_ARENA:
-                        if (flags & VMAP_DISABLE_HEIGHT)
-                            sLog->outString("Height disabled for arena map %u.", entry);
-                        if (flags & VMAP_DISABLE_LOS)
-                            sLog->outString("LoS disabled for arena map %u.", entry);
-                        break;
-                    default:
-                        break;
-                }
+                if (flags & VMAP_DISABLE_AREAFLAG)
+                    sLog->outString("Areaflag disabled for map %u.", entry);
+                if (flags & VMAP_DISABLE_LIQUIDSTATUS)
+                    sLog->outString("Liquid status disabled for map %u.", entry);
                 break;
             }
             case DISABLE_TYPE_MMAP:
@@ -181,24 +155,7 @@ void LoadDisables()
                     sLog->outError("Map entry %u from `disables` doesn't exist in dbc, skipped.", entry);
                     continue;
                 }
-                switch (mapEntry->map_type)
-                {
-                    case MAP_COMMON:
-                        sLog->outString("Pathfinding disabled for world map %u.", entry);
-                        break;
-                    case MAP_INSTANCE:
-                    case MAP_RAID:
-                        sLog->outString("Pathfinding disabled for instance map %u.", entry);
-                        break;
-                    case MAP_BATTLEGROUND:
-                        sLog->outString("Pathfinding disabled for battleground map %u.", entry);
-                        break;
-                    case MAP_ARENA:
-                        sLog->outString("Pathfinding disabled for arena map %u.", entry);
-                        break;
-                    default:
-                        break;
-                }
+                sLog->outString("Pathfinding disabled for map %u.", entry);
                 break;
             }
             default:
