@@ -426,9 +426,6 @@ void World::LoadConfigSettings(bool reload)
 		SetPlayerAmountLimit(sConfigMgr->GetIntDefault("PlayerLimit", 100));
     SetMotd(sConfigMgr->GetStringDefault("Motd", "Welcome to a Sunwell Core Server."));
 
-    ///- Get string for new logins (newly created characters)
-    SetNewCharString(sConfigMgr->GetStringDefault("PlayerStart.String", ""));
-
     ///- Send server info on login?
     m_int_configs[CONFIG_ENABLE_SINFO_LOGIN] = sConfigMgr->GetIntDefault("Server.LoginInfo", 0);
 

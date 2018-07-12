@@ -936,99 +936,10 @@ void Item::ClearEnchantment(EnchantmentSlot slot)
     SetState(ITEM_CHANGED, GetOwner());
 }
 
-bool Item::GemsFitSockets() const
-{
-    for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+MAX_GEM_SOCKETS; ++enchant_slot)
-    {
-        uint8 SocketColor = GetTemplate()->Socket[enchant_slot-SOCK_ENCHANTMENT_SLOT].Color;
-
-        if (!SocketColor) // no socket slot
-            continue;
-
-        uint32 enchant_id = GetEnchantmentId(EnchantmentSlot(enchant_slot));
-        if (!enchant_id) // no gems on this socket
-            return false;
-
-        SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-        if (!enchantEntry) // invalid gem id on this socket
-            return false;
-
-        uint8 GemColor = 0;
-
-        uint32 gemid = enchantEntry->GemID;
-        if (gemid)
-        {
-            ItemTemplate const* gemProto = sObjectMgr->GetItemTemplate(gemid);
-            if (gemProto)
-            {
-                GemPropertiesEntry const* gemProperty = sGemPropertiesStore.LookupEntry(gemProto->GemProperties);
-                if (gemProperty)
-                    GemColor = gemProperty->color;
-            }
-        }
-
-        if (!(GemColor & SocketColor)) // bad gem color on this socket
-            return false;
-    }
-    return true;
-}
-
-uint8 Item::GetGemCountWithID(uint32 GemID) const
-{
-    uint8 count = 0;
-    for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+MAX_GEM_SOCKETS; ++enchant_slot)
-    {
-        uint32 enchant_id = GetEnchantmentId(EnchantmentSlot(enchant_slot));
-        if (!enchant_id)
-            continue;
-
-        SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-        if (!enchantEntry)
-            continue;
-
-        if (GemID == enchantEntry->GemID)
-            ++count;
-    }
-    return count;
-}
-
-uint8 Item::GetGemCountWithLimitCategory(uint32 limitCategory) const
-{
-    uint8 count = 0;
-    for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+MAX_GEM_SOCKETS; ++enchant_slot)
-    {
-        uint32 enchant_id = GetEnchantmentId(EnchantmentSlot(enchant_slot));
-        if (!enchant_id)
-            continue;
-
-        SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-        if (!enchantEntry)
-            continue;
-
-        ItemTemplate const* gemProto = sObjectMgr->GetItemTemplate(enchantEntry->GemID);
-        if (!gemProto)
-            continue;
-
-        if (gemProto->ItemLimitCategory == limitCategory)
-            ++count;
-    }
-    return count;
-}
-
 bool Item::IsLimitedToAnotherMapOrZone(uint32 cur_mapId, uint32 cur_zoneId) const
 {
     ItemTemplate const* proto = GetTemplate();
     return proto && ((proto->Map && proto->Map != cur_mapId) || (proto->Area && proto->Area != cur_zoneId));
-}
-
-void Item::SendUpdateSockets()
-{
-    WorldPacket data(SMSG_SOCKET_GEMS_RESULT, 8+4+4+4+4);
-    data << uint64(GetGUID());
-    for (uint32 i = SOCK_ENCHANTMENT_SLOT; i <= BONUS_ENCHANTMENT_SLOT; ++i)
-        data << uint32(GetEnchantmentId(EnchantmentSlot(i)));
-
-    GetOwner()->GetSession()->SendPacket(&data);
 }
 
 // Though the client has the information in the item's data field,

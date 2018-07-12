@@ -140,10 +140,6 @@ bool LoginQueryHolder::Initialize()
     stmt->setUInt32(0, lowGuid);
     res &= SetPreparedQuery(PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS, stmt);
 
-    stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_GLYPHS);
-    stmt->setUInt32(0, lowGuid);
-    res &= SetPreparedQuery(PLAYER_LOGIN_QUERY_LOAD_GLYPHS, stmt);
-
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_TALENTS);
     stmt->setUInt32(0, lowGuid);
     res &= SetPreparedQuery(PLAYER_LOGIN_QUERY_LOAD_TALENTS, stmt);
@@ -460,8 +456,6 @@ void WorldSession::HandleCharCreateCallback(PreparedQueryResult result, Characte
                 return;
             }
 
-            newChar.setCinematic(1);                          // not show intro
-
             newChar.SetAtLoginFlag(AT_LOGIN_FIRST);               // First login
 
             // Player created, save it now
@@ -774,24 +768,6 @@ void WorldSession::HandlePlayerLoginFromDB(LoginQueryHolder* holder)
     SendPacket(&data);
 
     pCurrChar->SendInitialPacketsBeforeAddToMap();
-
-    //Show cinematic at the first time that player login
-    if (!pCurrChar->getCinematic())
-    {
-        pCurrChar->setCinematic(1);
-
-        if (ChrClassesEntry const* cEntry = sChrClassesStore.LookupEntry(pCurrChar->getClass()))
-        {
-            if (cEntry->CinematicSequence)
-                pCurrChar->SendCinematicStart(cEntry->CinematicSequence);
-            else if (ChrRacesEntry const* rEntry = sChrRacesStore.LookupEntry(pCurrChar->getRace()))
-                pCurrChar->SendCinematicStart(rEntry->CinematicSequence);
-
-            // send new char string if not empty
-            if (!sWorld->GetNewCharString().empty())
-                chH.PSendSysMessage("%s", sWorld->GetNewCharString().c_str());
-        }
-    }
 
 	// Xinef: moved this from below
     sObjectAccessor->AddObject(pCurrChar);
@@ -1418,28 +1394,6 @@ void WorldSession::HandleAlterAppearance(WorldPacket& recvData)
         _player->SetByteValue(PLAYER_BYTES, 0, uint8(bs_skinColor->hair_id));
 
     _player->SetStandState(0);                              // stand up
-}
-
-void WorldSession::HandleRemoveGlyph(WorldPacket& recvData)
-{
-    uint32 slot;
-    recvData >> slot;
-
-    if (slot >= MAX_GLYPH_SLOT_INDEX)
-    {
-        ;//sLog->outDebug(LOG_FILTER_NETWORKIO, "Client sent wrong glyph slot number in opcode CMSG_REMOVE_GLYPH %u", slot);
-        return;
-    }
-
-    if (uint32 glyph = _player->GetGlyph(slot))
-    {
-        if (GlyphPropertiesEntry const* glyphEntry = sGlyphPropertiesStore.LookupEntry(glyph))
-        {
-            _player->RemoveAurasDueToSpell(glyphEntry->SpellId);
-            _player->SetGlyph(slot, 0, true);
-            _player->SendTalentsInfoData(false);
-        }
-    }
 }
 
 void WorldSession::HandleCharCustomize(WorldPacket& recvData)

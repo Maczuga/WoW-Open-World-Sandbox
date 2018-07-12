@@ -124,7 +124,7 @@ enum ItemEnchantmentType
     ITEM_ENCHANTMENT_TYPE_STAT             = 5,
     ITEM_ENCHANTMENT_TYPE_TOTEM            = 6,
     ITEM_ENCHANTMENT_TYPE_USE_SPELL        = 7,
-    ITEM_ENCHANTMENT_TYPE_PRISMATIC_SOCKET = 8
+    //ITEM_ENCHANTMENT_TYPE_PRISMATIC_SOCKET = 8
 };
 
 enum ItemLimitCategoryMode

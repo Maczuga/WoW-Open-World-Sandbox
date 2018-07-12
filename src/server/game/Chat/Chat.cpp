@@ -917,7 +917,7 @@ enum SpellLinkType
     SPELL_LINK_TALENT  = 1,
     SPELL_LINK_ENCHANT = 2,
     SPELL_LINK_TRADE   = 3,
-    SPELL_LINK_GLYPH   = 4
+    // SPELL_LINK_GLYPH   = 4
 };
 
 static char const* const spellKeys[] =
@@ -926,7 +926,7 @@ static char const* const spellKeys[] =
     "Htalent",                                              // talent spell
     "Henchant",                                             // enchanting recipe spell
     "Htrade",                                               // profession/skill spell
-    "Hglyph",                                               // glyph
+    // "Hglyph",                                               // glyph
     0
 };
 
@@ -968,16 +968,6 @@ uint32 ChatHandler::extractSpellIdFromLink(char* text)
         case SPELL_LINK_ENCHANT:
         case SPELL_LINK_TRADE:
             return id;
-        case SPELL_LINK_GLYPH:
-        {
-            uint32 glyph_prop_id = param1_str ? (uint32)atol(param1_str) : 0;
-
-            GlyphPropertiesEntry const* glyphPropEntry = sGlyphPropertiesStore.LookupEntry(glyph_prop_id);
-            if (!glyphPropEntry)
-                return 0;
-
-            return glyphPropEntry->SpellId;
-        }
     }
 
     // unknown type?

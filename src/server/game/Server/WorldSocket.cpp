@@ -783,8 +783,8 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     //            clientSeed);
 
     // Get the account information from the realmd database
-    //         0           1        2       3          4         5       6          7   8
-    // SELECT id, sessionkey, last_ip, locked, expansion, mutetime, locale, recruiter, os FROM account WHERE username = ?
+    //         0           1        2       3          4         5       6  7
+    // SELECT id, sessionkey, last_ip, locked, expansion, mutetime, locale, os FROM account WHERE username = ?
     PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_INFO_BY_NAME);
 
     stmt->setString(0, account);
@@ -850,8 +850,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     if (locale >= TOTAL_LOCALES)
         locale = LOCALE_enUS;
 
-    uint32 recruiter = fields[7].GetUInt32();
-    std::string os = fields[8].GetString();
+    std::string os = fields[7].GetString();
 
     // Checks gmlevel per Realm
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_GET_GMLEVEL_BY_REALMID);
@@ -912,17 +911,6 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     //            account.c_str(),
     //            address.c_str());
 
-    // Check if this user is by any chance a recruiter
-    stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_RECRUITER);
-
-    stmt->setUInt32(0, id);
-
-    result = LoginDatabase.Query(stmt);
-
-    bool isRecruiter = false;
-    if (result)
-        isRecruiter = true;
-
     // Update the last_ip in the database
 
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_LAST_IP);
@@ -933,7 +921,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     LoginDatabase.Execute(stmt);
 
     // NOTE ATM the socket is single-threaded, have this in mind ...
-    ACE_NEW_RETURN (m_Session, WorldSession (id, this, AccountTypes(security), expansion, mutetime, locale, recruiter, isRecruiter, skipQueue), -1);
+    ACE_NEW_RETURN (m_Session, WorldSession (id, this, AccountTypes(security), expansion, mutetime, locale, skipQueue), -1);
 
     m_Crypt.Init(&k);
 

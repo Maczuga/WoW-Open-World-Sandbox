@@ -706,8 +706,6 @@ Player::Player(WorldSession* session): Unit(true), m_mover(this)
 
     m_trade = NULL;
 
-    m_cinematic = 0;
-
     PlayerTalkClass = new PlayerMenu(GetSession());
     m_currentBuybackSlot = BUYBACK_SLOT_START;
 
@@ -768,12 +766,6 @@ Player::Player(WorldSession* session): Unit(true), m_mover(this)
 
     m_activeSpec = 0;
     m_specsCount = 1;
-
-    for (uint8 i = 0; i < MAX_TALENT_SPECS; ++i)
-    {
-        for (uint8 g = 0; g < MAX_GLYPH_SLOT_INDEX; ++g)
-            m_Glyphs[i][g] = 0;
-    }
 
     for (uint8 i = 0; i < BASEMOD_END; ++i)
     {
@@ -1074,7 +1066,6 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     // base stats and related field values
     InitStatsForLevel();
     InitTaxiNodesForLevel();
-    InitGlyphsForLevel();
     InitTalentForLevel();
     InitPrimaryProfessions();                               // to max set before any spell added
 
@@ -3120,7 +3111,6 @@ void Player::GiveLevel(uint8 level)
 
     InitTalentForLevel();
     InitTaxiNodesForLevel();
-    InitGlyphsForLevel();
 
     UpdateAllStats();
 
@@ -4772,10 +4762,6 @@ void Player::DeleteFromDB(uint64 playerguid, uint32 accountId, bool updateRealmC
             trans->Append(stmt);
 
             stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_BANK_EVENTLOG_BY_PLAYER);
-            stmt->setUInt32(0, guid);
-            trans->Append(stmt);
-
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_GLYPHS);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
@@ -7037,8 +7023,6 @@ void Player::SetHonorPoints(uint32 value)
     if (value > sWorld->getIntConfig(CONFIG_MAX_HONOR_POINTS))
         value = sWorld->getIntConfig(CONFIG_MAX_HONOR_POINTS);
     SetUInt32Value(PLAYER_FIELD_HONOR_CURRENCY, value);
-    if (value)
-        AddKnownCurrency(ITEM_HONOR_POINTS_ID);
 }
 
 void Player::SetArenaPoints(uint32 value)
@@ -7046,8 +7030,6 @@ void Player::SetArenaPoints(uint32 value)
     if (value > sWorld->getIntConfig(CONFIG_MAX_ARENA_POINTS))
         value = sWorld->getIntConfig(CONFIG_MAX_ARENA_POINTS);
     SetUInt32Value(PLAYER_FIELD_ARENA_CURRENCY, value);
-    if (value)
-        AddKnownCurrency(ITEM_ARENA_POINTS_ID);
 }
 
 void Player::ModifyHonorPoints(int32 value, SQLTransaction* trans /*=NULL*/)
@@ -7512,9 +7494,6 @@ void Player::_ApplyItemMods(Item* item, uint8 slot, bool apply)
     ;//sLog->outDetail("applying mods for item %u ", item->GetGUIDLow());
 
     uint8 attacktype = Player::GetAttackBySlot(slot);
-
-    if (proto->Socket[0].Color)                              //only (un)equipping of items with sockets can influence metagems, so no need to waste time with normal items
-        CorrectMetaGemEnchants(slot, apply);
 
     if (attacktype < MAX_ATTACK)
         _ApplyWeaponDependentAuraMods(item, WeaponAttackType(attacktype), apply);
@@ -9475,12 +9454,6 @@ uint32 Player::GetItemCount(uint32 item, bool inBankAlso, Item* skipItem) const
         if (Bag* pBag = GetBagByPos(i))
             count += pBag->GetItemCount(item, skipItem);
 
-    if (skipItem && skipItem->GetTemplate()->GemProperties)
-        for (uint8 i = EQUIPMENT_SLOT_START; i < INVENTORY_SLOT_ITEM_END; ++i)
-            if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-                if (pItem != skipItem && pItem->GetTemplate()->Socket[0].Color)
-                    count += pItem->GetGemCountWithID(item);
-
     if (inBankAlso)
     {
         // checking every item from 39 to 74 (including bank bags)
@@ -9492,12 +9465,6 @@ uint32 Player::GetItemCount(uint32 item, bool inBankAlso, Item* skipItem) const
         for (uint8 i = BANK_SLOT_BAG_START; i < BANK_SLOT_BAG_END; ++i)
             if (Bag* pBag = GetBagByPos(i))
                 count += pBag->GetItemCount(item, skipItem);
-
-        if (skipItem && skipItem->GetTemplate()->GemProperties)
-            for (uint8 i = BANK_SLOT_ITEM_START; i < BANK_SLOT_ITEM_END; ++i)
-                if (Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i))
-                    if (pItem != skipItem && pItem->GetTemplate()->Socket[0].Color)
-                        count += pItem->GetGemCountWithID(item);
     }
 
     return count;
@@ -9843,24 +9810,6 @@ bool Player::HasItemOrGemWithIdEquipped(uint32 item, uint32 count, uint8 except_
         }
     }
 
-    ItemTemplate const* pProto = sObjectMgr->GetItemTemplate(item);
-    if (pProto && pProto->GemProperties)
-    {
-        for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
-        {
-            if (i == except_slot)
-                continue;
-
-            Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
-            if (pItem && pItem->GetTemplate()->Socket[0].Color)
-            {
-                tempcount += pItem->GetGemCountWithID(item);
-                if (tempcount >= count)
-                    return true;
-            }
-        }
-    }
-
     return false;
 }
 
@@ -9883,13 +9832,6 @@ bool Player::HasItemOrGemWithLimitCategoryEquipped(uint32 limitCategory, uint32 
         if (pProto->ItemLimitCategory == limitCategory)
         {
             tempcount += pItem->GetCount();
-            if (tempcount >= count)
-                return true;
-        }
-
-        if (pProto->Socket[0].Color || pItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT))
-        {
-            tempcount += pItem->GetGemCountWithLimitCategory(limitCategory);
             if (tempcount >= count)
                 return true;
         }
@@ -11585,10 +11527,6 @@ Item* Player::_StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool
 
             pItem->SetSlot(slot);
             pItem->SetContainer(NULL);
-
-            // need update known currency
-            if (slot >= CURRENCYTOKEN_SLOT_START && slot < CURRENCYTOKEN_SLOT_END)
-                AddKnownCurrency(pItem->GetEntry());
         }
         else
             pBag->StoreItem(slot, pItem, update);
@@ -13218,25 +13156,11 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
     if (!pEnchant)
         return;
 
-    if (!ignore_condition && pEnchant->EnchantmentCondition && !EnchantmentFitsRequirements(pEnchant->EnchantmentCondition, -1))
-        return;
-
     if (pEnchant->requiredLevel > getLevel())
         return;
 
     if (pEnchant->requiredSkill > 0 && pEnchant->requiredSkillValue > GetSkillValue(pEnchant->requiredSkill))
         return;
-
-    // If we're dealing with a gem inside a prismatic socket we need to check the prismatic socket requirements
-    // rather than the gem requirements itself. If the socket has no color it is a prismatic socket.
-    if ((slot == SOCK_ENCHANTMENT_SLOT || slot == SOCK_ENCHANTMENT_SLOT_2 || slot == SOCK_ENCHANTMENT_SLOT_3)
-        && !item->GetTemplate()->Socket[slot-SOCK_ENCHANTMENT_SLOT].Color)
-    {
-        // Check if the requirements for the prismatic socket are met before applying the gem stats
-         SpellItemEnchantmentEntry const* pPrismaticEnchant = sSpellItemEnchantmentStore.LookupEntry(item->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
-         if (!pPrismaticEnchant || (pPrismaticEnchant->requiredSkill > 0 && pPrismaticEnchant->requiredSkillValue > GetSkillValue(pPrismaticEnchant->requiredSkill)))
-             return;
-    }
 
     if (!item->IsBroken())
     {
@@ -13540,9 +13464,6 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                 case ITEM_ENCHANTMENT_TYPE_USE_SPELL:
                     // processed in Player::CastItemUseSpell
                     break;
-                case ITEM_ENCHANTMENT_TYPE_PRISMATIC_SOCKET:
-                    // nothing do..
-                    break;
                 default:
                     sLog->outError("Unknown item enchantment (id = %d) display type: %d", enchant_id, enchant_display_type);
                     break;
@@ -13597,22 +13518,6 @@ void Player::UpdateSkillEnchantments(uint16 skill_id, uint16 curr_value, uint16 
                         ApplyEnchantment(m_items[i], EnchantmentSlot(slot), true);
                     else if (new_value < Enchant->requiredSkillValue && curr_value >= Enchant->requiredSkillValue)
                         ApplyEnchantment(m_items[i], EnchantmentSlot(slot), false);
-                }
-
-                // If we're dealing with a gem inside a prismatic socket we need to check the prismatic socket requirements
-                // rather than the gem requirements itself. If the socket has no color it is a prismatic socket.
-                if ((slot == SOCK_ENCHANTMENT_SLOT || slot == SOCK_ENCHANTMENT_SLOT_2 || slot == SOCK_ENCHANTMENT_SLOT_3)
-                    && !m_items[i]->GetTemplate()->Socket[slot-SOCK_ENCHANTMENT_SLOT].Color)
-                {
-                    SpellItemEnchantmentEntry const* pPrismaticEnchant = sSpellItemEnchantmentStore.LookupEntry(m_items[i]->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT));
-
-                    if (pPrismaticEnchant && pPrismaticEnchant->requiredSkill == skill_id)
-                    {
-                        if (curr_value < pPrismaticEnchant->requiredSkillValue && new_value >= pPrismaticEnchant->requiredSkillValue)
-                            ApplyEnchantment(m_items[i], EnchantmentSlot(slot), true);
-                        else if (new_value < pPrismaticEnchant->requiredSkillValue && curr_value >= pPrismaticEnchant->requiredSkillValue)
-                            ApplyEnchantment(m_items[i], EnchantmentSlot(slot), false);
-                    }
                 }
             }
         }
@@ -16327,11 +16232,10 @@ bool Player::isBeingLoaded() const
 
 bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 { 
-    ////                                                     0     1        2     3     4        5      6    7      8     9           10              11
     //QueryResult* result = CharacterDatabase.PQuery("SELECT guid, account, name, race, class, gender, level, xp, money, playerBytes, playerBytes2, playerFlags, "
-     // 12          13          14          15   16           17        18        19         20         21          22           23                 24
-    //"position_x, position_y, position_z, map, orientation, taximask, cinematic, totaltime, leveltime, rest_bonus, logout_time, is_logout_resting, resettalents_cost, "
-    // 25                 26       27       28       29       30         31           32             33        34    35      36                 37         38
+     // 12          13          14          15   16           17        18        19         20          21           22                 23
+    //"position_x, position_y, position_z, map, orientation, taximask, totaltime, leveltime, rest_bonus, logout_time, is_logout_resting, resettalents_cost, "
+    // 24                 25       26       27       29       30         31           32             33        34    35      36                 37         38
     //"resettalents_time, trans_x, trans_y, trans_z, trans_o, transguid, extra_flags, stable_slots, at_login, zone, online, death_expire_time, taxi_path, instance_mode_mask, "
     // 39           40                41                 42                    43          44          45              46           47               48              49
     //"arenaPoints, totalHonorPoints, todayHonorPoints, yesterdayHonorPoints, totalKills, todayKills, yesterdayKills, chosenTitle, knownCurrencies, watchedFaction, drunk, "
@@ -16392,8 +16296,8 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     SetUInt32Value(UNIT_FIELD_LEVEL, fields[6].GetUInt8());
     SetUInt32Value(PLAYER_XP, fields[7].GetUInt32());
 
-    _LoadIntoDataField(fields[61].GetCString(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_SIZE);
-    _LoadIntoDataField(fields[64].GetCString(), PLAYER__FIELD_KNOWN_TITLES, KNOWN_TITLES_SIZE*2);
+    _LoadIntoDataField(fields[60].GetCString(), PLAYER_EXPLORED_ZONES_1, PLAYER_EXPLORED_ZONES_SIZE);
+    _LoadIntoDataField(fields[63].GetCString(), PLAYER__FIELD_KNOWN_TITLES, KNOWN_TITLES_SIZE*2);
 
     SetObjectScale(1.0f);
     SetFloatValue(UNIT_FIELD_HOVERHEIGHT, 1.0f);
@@ -16406,16 +16310,16 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     SetUInt32Value(PLAYER_BYTES, fields[9].GetUInt32());
     SetUInt32Value(PLAYER_BYTES_2, fields[10].GetUInt32());
     SetByteValue(PLAYER_BYTES_3, 0, fields[5].GetUInt8());
-    SetByteValue(PLAYER_BYTES_3, 1, fields[49].GetUInt8());
+    SetByteValue(PLAYER_BYTES_3, 1, fields[48].GetUInt8());
     SetUInt32Value(PLAYER_FLAGS, fields[11].GetUInt32());
-    SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[48].GetUInt32());
+    SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[47].GetUInt32());
 
-    SetUInt64Value(PLAYER_FIELD_KNOWN_CURRENCIES, fields[47].GetUInt64());
+    SetUInt64Value(PLAYER_FIELD_KNOWN_CURRENCIES, fields[46].GetUInt64());
 
-    SetUInt32Value(PLAYER_AMMO_ID, fields[63].GetUInt32());
+    SetUInt32Value(PLAYER_AMMO_ID, fields[62].GetUInt32());
 
     // set which actionbars the client has active - DO NOT REMOVE EVER AGAIN (can be changed though, if it does change fieldwise)
-    SetByteValue(PLAYER_FIELD_BYTES, 2, fields[65].GetUInt8());
+    SetByteValue(PLAYER_FIELD_BYTES, 2, fields[64].GetUInt8());
 
     InitDisplayIds();
 
@@ -16443,25 +16347,25 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     InitPrimaryProfessions();                               // to max set before any spell loaded
 
     // init saved position, and fix it later if problematic
-    uint32 transLowGUID = fields[30].GetUInt32();
+    uint32 transLowGUID = fields[29].GetUInt32();
     Relocate(fields[12].GetFloat(), fields[13].GetFloat(), fields[14].GetFloat(), fields[16].GetFloat());
     uint32 mapId = fields[15].GetUInt16();
-    uint32 instanceId = fields[58].GetUInt32();
+    uint32 instanceId = fields[57].GetUInt32();
 
-    std::string taxi_nodes = fields[37].GetString();
+    std::string taxi_nodes = fields[36].GetString();
 
 #define RelocateToHomebind(){ mapId = m_homebindMapId; instanceId = 0; Relocate(m_homebindX, m_homebindY, m_homebindZ); }
 
     _LoadGroup();
 
-    SetArenaPoints(fields[39].GetUInt32());
+    SetArenaPoints(fields[38].GetUInt32());
 
-    SetHonorPoints(fields[40].GetUInt32());
-    SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, fields[41].GetUInt32());
-    SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, fields[42].GetUInt32());
-    SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, fields[43].GetUInt32());
-    SetUInt16Value(PLAYER_FIELD_KILLS, 0, fields[44].GetUInt16());
-    SetUInt16Value(PLAYER_FIELD_KILLS, 1, fields[45].GetUInt16());
+    SetHonorPoints(fields[39].GetUInt32());
+    SetUInt32Value(PLAYER_FIELD_TODAY_CONTRIBUTION, fields[40].GetUInt32());
+    SetUInt32Value(PLAYER_FIELD_YESTERDAY_CONTRIBUTION, fields[41].GetUInt32());
+    SetUInt32Value(PLAYER_FIELD_LIFETIME_HONORABLE_KILLS, fields[42].GetUInt32());
+    SetUInt16Value(PLAYER_FIELD_KILLS, 0, fields[43].GetUInt16());
+    SetUInt16Value(PLAYER_FIELD_KILLS, 1, fields[44].GetUInt16());
 
     _LoadEntryPointData(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_ENTRY_POINT));
 
@@ -16489,7 +16393,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
         if (m_transport) 
         {
-            float x = fields[26].GetFloat(), y = fields[27].GetFloat(), z = fields[28].GetFloat(), o = fields[29].GetFloat();
+            float x = fields[25].GetFloat(), y = fields[26].GetFloat(), z = fields[27].GetFloat(), o = fields[28].GetFloat();
             m_movementInfo.transport.guid = transGUID;
             m_movementInfo.transport.pos.Relocate(x, y, z, o);
             m_transport->CalculatePassengerPosition(x, y, z, &o);
@@ -16577,7 +16481,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     SaveRecallPosition();
 
     time_t now = time(NULL);
-    time_t logoutTime = time_t(fields[22].GetUInt32());
+    time_t logoutTime = time_t(fields[21].GetUInt32());
 
     // since last logout (in seconds)
     uint32 time_diff = uint32(now - logoutTime); //uint64 is excessive for a time_diff in seconds.. uint32 allows for 136~ year difference.
@@ -16590,18 +16494,17 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     SetDrunkValue(newDrunkValue);
 
-    m_cinematic = fields[18].GetUInt8();
-    m_Played_time[PLAYED_TIME_TOTAL]= fields[19].GetUInt32();
-    m_Played_time[PLAYED_TIME_LEVEL]= fields[20].GetUInt32();
+    m_Played_time[PLAYED_TIME_TOTAL]= fields[18].GetUInt32();
+    m_Played_time[PLAYED_TIME_LEVEL]= fields[19].GetUInt32();
 
-    m_resetTalentsCost = fields[24].GetUInt32();
-    m_resetTalentsTime = time_t(fields[25].GetUInt32());
+    m_resetTalentsCost = fields[23].GetUInt32();
+    m_resetTalentsTime = time_t(fields[24].GetUInt32());
 
     m_taxi.LoadTaxiMask(fields[17].GetCString());            // must be before InitTaxiNodesForLevel
 
-    uint32 extraflags = fields[31].GetUInt16();
+    uint32 extraflags = fields[30].GetUInt16();
 
-    m_atLoginFlags = fields[33].GetUInt16();
+    m_atLoginFlags = fields[32].GetUInt16();
 
     if (HasAtLoginFlag(AT_LOGIN_RENAME))
     {
@@ -16614,7 +16517,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     m_lastHonorUpdateTime = logoutTime;
     UpdateHonorFields();
 
-    m_deathExpireTime = time_t(fields[36].GetUInt32());
+    m_deathExpireTime = time_t(fields[35].GetUInt32());
 
     if (m_deathExpireTime > now + MAX_DEATH_COUNT * DEATH_EXPIRE_STEP)
         m_deathExpireTime = now + MAX_DEATH_COUNT * DEATH_EXPIRE_STEP - 1;
@@ -16643,7 +16546,6 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     // reset stats before loading any modifiers
     InitStatsForLevel();
-    InitGlyphsForLevel();
     InitTaxiNodesForLevel();
     InitRunes();
 
@@ -16651,7 +16553,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     ClearInCombat();
 
     // rest bonus can only be calculated after InitStatsForLevel()
-    _restBonus = fields[21].GetFloat();
+    _restBonus = fields[20].GetFloat();
 
     if (time_diff > 0)
     {
@@ -16659,7 +16561,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
         float bubble0 = 0.031f;
         //speed collect rest bonus in offline, in logout, in tavern, city (section/in hour)
         float bubble1 = 0.125f;
-        float bubble = fields[23].GetUInt8() > 0
+        float bubble = fields[22].GetUInt8() > 0
             ? bubble1*sWorld->getRate(RATE_REST_OFFLINE_IN_TAVERN_OR_CITY)
             : bubble0*sWorld->getRate(RATE_REST_OFFLINE_IN_WILDERNESS);
 
@@ -16675,17 +16577,15 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     //mails are loaded only when needed ;-) - when player in game click on mailbox.
     //_LoadMail();
 
-    m_specsCount = fields[59].GetUInt8();
-    m_activeSpec = fields[60].GetUInt8();
+    m_specsCount = fields[58].GetUInt8();
+    m_activeSpec = fields[59].GetUInt8();
 
     LearnDefaultSkills();
     LearnCustomSpells();
     _LoadSpells(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_SPELLS));
     _LoadTalents(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_TALENTS));
-
-    _LoadGlyphs(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_GLYPHS));
     _LoadAuras(holder->GetPreparedResult(PLAYER_LOGIN_QUERY_LOAD_AURAS), time_diff);
-    _LoadGlyphAuras();
+
     // add ghost flag (must be after aura load: PLAYER_FLAGS_GHOST set in aura)
     if (HasFlag(PLAYER_FLAGS, PLAYER_FLAGS_GHOST))
 	{
@@ -16728,7 +16628,7 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
 
     // check PLAYER_CHOSEN_TITLE compatibility with PLAYER__FIELD_KNOWN_TITLES
     // note: PLAYER__FIELD_KNOWN_TITLES updated at quest status loaded
-    uint32 curTitle = fields[46].GetUInt32();
+    uint32 curTitle = fields[45].GetUInt32();
     if (curTitle && !HasTitle(curTitle))
         curTitle = 0;
 
@@ -16751,11 +16651,11 @@ bool Player::LoadFromDB(uint32 guid, SQLQueryHolder *holder)
     UpdateAllStats();
 
     // restore remembered power/health values (but not more max values)
-    uint32 savedHealth = fields[50].GetUInt32();
+    uint32 savedHealth = fields[49].GetUInt32();
     SetHealth(savedHealth > GetMaxHealth() ? GetMaxHealth() : savedHealth);
     for (uint8 i = 0; i < MAX_POWERS; ++i)
     {
-        uint32 savedPower = fields[51+i].GetUInt32();
+        uint32 savedPower = fields[50+i].GetUInt32();
         SetPower(Powers(i), savedPower > GetMaxPower(Powers(i)) ? GetMaxPower(Powers(i)) : savedPower);
     }
 
@@ -16966,38 +16866,6 @@ void Player::_LoadAuras(PreparedQueryResult result, uint32 timediff)
             }
         }
         while (result->NextRow());
-    }
-}
-
-void Player::_LoadGlyphAuras()
-{ 
-    for (uint8 i = 0; i < MAX_GLYPH_SLOT_INDEX; ++i)
-    {
-        if (uint32 glyph = GetGlyph(i))
-        {
-            if (GlyphPropertiesEntry const* glyphEntry = sGlyphPropertiesStore.LookupEntry(glyph))
-            {
-                if (GlyphSlotEntry const* glyphSlotEntry = sGlyphSlotStore.LookupEntry(GetGlyphSlot(i)))
-                {
-					const SpellInfo* spellInfo = sSpellMgr->GetSpellInfo(glyphEntry->SpellId);
-					if (glyphEntry->TypeFlags == glyphSlotEntry->TypeFlags)
-					{
-						if (!spellInfo->Stances)
-							CastSpell(this, glyphEntry->SpellId, TriggerCastFlags(TRIGGERED_FULL_MASK&~(TRIGGERED_IGNORE_SHAPESHIFT|TRIGGERED_IGNORE_CASTER_AURASTATE)));
-						continue;
-					}
-                    else
-                        sLog->outError("Player %s has glyph with typeflags %u in slot with typeflags %u, removing.", m_name.c_str(), glyphEntry->TypeFlags, glyphSlotEntry->TypeFlags);
-                }
-                else
-                    sLog->outError("Player %s has not existing glyph slot entry %u on index %u", m_name.c_str(), GetGlyphSlot(i), i);
-            }
-            else
-                sLog->outError("Player %s has not existing glyph entry %u on index %u", m_name.c_str(), glyph, i);
-
-            // On any error remove glyph
-            SetGlyph(i, 0, true);
-        }
     }
 }
 
@@ -17374,13 +17242,7 @@ void Player::_LoadMailAsynch(PreparedQueryResult result)
 				m->COD            = fields[24].GetUInt32();
 				m->checked        = fields[25].GetUInt8();
 				m->stationery     = fields[26].GetUInt8();
-				m->mailTemplateId = fields[27].GetInt16();
-
-				if (m->mailTemplateId && !sMailTemplateStore.LookupEntry(m->mailTemplateId))
-				{
-					sLog->outError("Player::_LoadMail - Mail (%u) have not existed MailTemplateId (%u), remove at load", m->messageID, m->mailTemplateId);
-					m->mailTemplateId = 0;
-				}
+				m->mailTemplateId = 0;
 
 				m->state = MAIL_STATE_UNCHANGED;
 			}
@@ -17467,13 +17329,7 @@ void Player::_LoadMail()
             m->COD            = fields[10].GetUInt32();
             m->checked        = fields[11].GetUInt8();
             m->stationery     = fields[12].GetUInt8();
-            m->mailTemplateId = fields[13].GetInt16();
-
-            if (m->mailTemplateId && !sMailTemplateStore.LookupEntry(m->mailTemplateId))
-            {
-                sLog->outError("Player::_LoadMail - Mail (%u) have not existed MailTemplateId (%u), remove at load", m->messageID, m->mailTemplateId);
-                m->mailTemplateId = 0;
-            }
+            m->mailTemplateId = 0;
 
             m->state = MAIL_STATE_UNCHANGED;
 
@@ -17866,7 +17722,6 @@ void Player::SaveToDB(bool create, bool logout)
     _SaveSkills(trans);
     m_reputationMgr->SaveToDB(trans);
     _SaveEquipmentSets(trans);
-    _SaveGlyphs(trans);
 
     // check if stats should only be saved on logout
     // save stats can be out of transaction
@@ -20229,169 +20084,6 @@ void Player::UpdatePotionCooldown()
     SetLastPotionId(0);
 }
 
-                                                           //slot to be excluded while counting
-bool Player::EnchantmentFitsRequirements(uint32 enchantmentcondition, int8 slot)
-{ 
-    if (!enchantmentcondition)
-        return true;
-
-    SpellItemEnchantmentConditionEntry const* Condition = sSpellItemEnchantmentConditionStore.LookupEntry(enchantmentcondition);
-
-    if (!Condition)
-        return true;
-
-    uint8 curcount[4] = {0, 0, 0, 0};
-
-    //counting current equipped gem colors
-    for (uint8 i = EQUIPMENT_SLOT_START; i < EQUIPMENT_SLOT_END; ++i)
-    {
-        if (i == slot)
-            continue;
-        Item* pItem2 = GetItemByPos(INVENTORY_SLOT_BAG_0, i);
-        if (pItem2 && !pItem2->IsBroken() && pItem2->GetTemplate()->Socket[0].Color)
-        {
-            for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot <= PRISMATIC_ENCHANTMENT_SLOT; ++enchant_slot)
-            {
-				if (enchant_slot == BONUS_ENCHANTMENT_SLOT)
-					continue;
-
-                uint32 enchant_id = pItem2->GetEnchantmentId(EnchantmentSlot(enchant_slot));
-                if (!enchant_id)
-                    continue;
-
-                SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-                if (!enchantEntry)
-                    continue;
-
-                uint32 gemid = enchantEntry->GemID;
-                if (!gemid)
-                    continue;
-
-                ItemTemplate const* gemProto = sObjectMgr->GetItemTemplate(gemid);
-                if (!gemProto)
-                    continue;
-
-                GemPropertiesEntry const* gemProperty = sGemPropertiesStore.LookupEntry(gemProto->GemProperties);
-                if (!gemProperty)
-                    continue;
-
-                uint8 GemColor = gemProperty->color;
-
-                for (uint8 b = 0, tmpcolormask = 1; b < 4; b++, tmpcolormask <<= 1)
-                {
-                    if (tmpcolormask & GemColor)
-                        ++curcount[b];
-                }
-            }
-        }
-    }
-
-    bool activate = true;
-
-    for (uint8 i = 0; i < 5; i++)
-    {
-        if (!Condition->Color[i])
-            continue;
-
-        uint32 _cur_gem = curcount[Condition->Color[i] - 1];
-
-        // if have <CompareColor> use them as count, else use <value> from Condition
-        uint32 _cmp_gem = Condition->CompareColor[i] ? curcount[Condition->CompareColor[i] - 1]: Condition->Value[i];
-
-        switch (Condition->Comparator[i])
-        {
-            case 2:                                         // requires less <color> than (<value> || <comparecolor>) gems
-                activate &= (_cur_gem < _cmp_gem) ? true : false;
-                break;
-            case 3:                                         // requires more <color> than (<value> || <comparecolor>) gems
-                activate &= (_cur_gem > _cmp_gem) ? true : false;
-                break;
-            case 5:                                         // requires at least <color> than (<value> || <comparecolor>) gems
-                activate &= (_cur_gem >= _cmp_gem) ? true : false;
-                break;
-        }
-    }
-
-    ;//sLog->outDebug(LOG_FILTER_PLAYER_ITEMS, "Checking Condition %u, there are %u Meta Gems, %u Red Gems, %u Yellow Gems and %u Blue Gems, Activate:%s", enchantmentcondition, curcount[0], curcount[1], curcount[2], curcount[3], activate ? "yes" : "no");
-
-    return activate;
-}
-
-void Player::CorrectMetaGemEnchants(uint8 exceptslot, bool apply)
-{ 
-                                                            //cycle all equipped items
-    for (uint32 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
-    {
-        //enchants for the slot being socketed are handled by Player::ApplyItemMods
-        if (slot == exceptslot)
-            continue;
-
-        Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
-
-        if (!pItem || !pItem->GetTemplate()->Socket[0].Color)
-            continue;
-
-        for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+3; ++enchant_slot)
-        {
-            uint32 enchant_id = pItem->GetEnchantmentId(EnchantmentSlot(enchant_slot));
-            if (!enchant_id)
-                continue;
-
-            SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-            if (!enchantEntry)
-                continue;
-
-            uint32 condition = enchantEntry->EnchantmentCondition;
-            if (condition)
-            {
-                                                            //was enchant active with/without item?
-                bool wasactive = EnchantmentFitsRequirements(condition, apply ? exceptslot : -1);
-                                                            //should it now be?
-                if (wasactive ^ EnchantmentFitsRequirements(condition, apply ? -1 : exceptslot))
-                {
-                    // ignore item gem conditions
-                                                            //if state changed, (dis)apply enchant
-                    ApplyEnchantment(pItem, EnchantmentSlot(enchant_slot), !wasactive, true, true);
-                }
-            }
-        }
-    }
-}
-
-                                                            //if false -> then toggled off if was on| if true -> toggled on if was off AND meets requirements
-void Player::ToggleMetaGemsActive(uint8 exceptslot, bool apply)
-{ 
-    //cycle all equipped items
-    for (int slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
-    {
-        //enchants for the slot being socketed are handled by WorldSession::HandleSocketOpcode(WorldPacket& recvData)
-        if (slot == exceptslot)
-            continue;
-
-        Item* pItem = GetItemByPos(INVENTORY_SLOT_BAG_0, slot);
-
-        if (!pItem || !pItem->GetTemplate()->Socket[0].Color)   //if item has no sockets or no item is equipped go to next item
-            continue;
-
-        //cycle all (gem)enchants
-        for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+3; ++enchant_slot)
-        {
-            uint32 enchant_id = pItem->GetEnchantmentId(EnchantmentSlot(enchant_slot));
-            if (!enchant_id)                                 //if no enchant go to next enchant(slot)
-                continue;
-
-            SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-            if (!enchantEntry)
-                continue;
-
-            //only metagems to be (de)activated, so only enchants with condition
-            uint32 condition = enchantEntry->EnchantmentCondition;
-            if (condition)
-                ApplyEnchantment(pItem, EnchantmentSlot(enchant_slot), apply);
-        }
-    }
-}
-
 void Player::SetEntryPoint()
 { 
 	m_entryPointData.joinPos.m_mapId = MAPID_INVALID;
@@ -20812,7 +20504,7 @@ void Player::SendInitialPacketsBeforeAddToMap()
 
     // SMSG_INSTANCE_DIFFICULTY
     data.Initialize(SMSG_INSTANCE_DIFFICULTY, 4+4);
-    data << uint32(GetMap()->GetDifficulty());
+    data << uint32(0);
     data << uint32(0); // Raid dynamic difficulty
     GetSession()->SendPacket(&data);
 
@@ -22177,31 +21869,6 @@ uint32 Player::GetBarberShopCost(uint8 newhairstyle, uint8 newhaircolor, uint8 n
     return uint32(cost);
 }
 
-void Player::InitGlyphsForLevel()
-{ 
-    for (uint32 i = 0; i < sGlyphSlotStore.GetNumRows(); ++i)
-        if (GlyphSlotEntry const* gs = sGlyphSlotStore.LookupEntry(i))
-            if (gs->Order)
-                SetGlyphSlot(gs->Order - 1, gs->Id);
-
-    uint8 level = getLevel();
-    uint32 value = 0;
-
-    // 0x3F = 0x01 | 0x02 | 0x04 | 0x08 | 0x10 | 0x20 for 80 level
-    if (level >= 15)
-        value |= (0x01 | 0x02);
-    if (level >= 30)
-        value |= 0x08;
-    if (level >= 50)
-        value |= 0x04;
-    if (level >= 70)
-        value |= 0x10;
-    if (level >= 80)
-        value |= 0x20;
-
-    SetUInt32Value(PLAYER_GLYPHS_ENABLED, value);
-}
-
 bool Player::isTotalImmune() const
 { 
     AuraEffectList const& immune = GetAuraEffectsByType(SPELL_AURA_SCHOOL_IMMUNITY);
@@ -22807,28 +22474,6 @@ InventoryResult Player::CanEquipUniqueItem(Item* pItem, uint8 eslot, uint32 limi
     if (InventoryResult res = CanEquipUniqueItem(pProto, eslot, limit_count))
         return res;
 
-    // check unique-equipped on gems
-    for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+3; ++enchant_slot)
-    {
-        uint32 enchant_id = pItem->GetEnchantmentId(EnchantmentSlot(enchant_slot));
-        if (!enchant_id)
-            continue;
-        SpellItemEnchantmentEntry const* enchantEntry = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-        if (!enchantEntry)
-            continue;
-
-        ItemTemplate const* pGem = sObjectMgr->GetItemTemplate(enchantEntry->GemID);
-        if (!pGem)
-            continue;
-
-        // include for check equip another gems with same limit category for not equipped item (and then not counted)
-        uint32 gem_limit_count = !pItem->IsEquipped() && pGem->ItemLimitCategory
-            ? pItem->GetGemCountWithLimitCategory(pGem->ItemLimitCategory) : 1;
-
-        if (InventoryResult res = CanEquipUniqueItem(pGem, eslot, gem_limit_count))
-            return res;
-    }
-
     return EQUIP_ERR_OK;
 }
 
@@ -23156,12 +22801,6 @@ void Player::LearnPetTalent(uint64 petGuid, uint32 talentId, uint32 talentRank)
     pet->SetFreeTalentPoints(CurTalentPoints - (talentRank - curtalent_maxrank + 1));
 }
 
-void Player::AddKnownCurrency(uint32 itemId)
-{ 
-    if (CurrencyTypesEntry const* ctEntry = sCurrencyTypesStore.LookupEntry(itemId))
-        SetFlag64(PLAYER_FIELD_KNOWN_CURRENCIES, (1LL << (ctEntry->BitIndex-1)));
-}
-
 void Player::UpdateFallInformationIfNeed(MovementInfo const& minfo, uint16 opcode)
 { 
     if (m_lastFallTime >= minfo.fallTime || m_lastFallZ <= minfo.pos.GetPositionZ() || opcode == MSG_MOVE_FALL_LAND)
@@ -23273,7 +22912,7 @@ void Player::BuildPlayerTalentsInfoData(WorldPacket* data)
         *data << uint8(MAX_GLYPH_SLOT_INDEX);               // glyphs count
 
         for (uint8 i = 0; i < MAX_GLYPH_SLOT_INDEX; ++i)
-            *data << uint16(m_Glyphs[specIdx][i]);          // GlyphProperties.dbc
+            *data << uint16(0);          // GlyphProperties.dbc
     }
 }
 
@@ -23622,7 +23261,6 @@ void Player::_SaveCharacter(bool create, SQLTransaction& trans)
         std::ostringstream ss;
         ss << m_taxi;
         stmt->setString(index++, ss.str());
-        stmt->setUInt8(index++, m_cinematic);
         stmt->setUInt32(index++, m_Played_time[PLAYED_TIME_TOTAL]);
         stmt->setUInt32(index++, m_Played_time[PLAYED_TIME_LEVEL]);
         stmt->setFloat(index++, finiteAlways(_restBonus));
@@ -23742,7 +23380,6 @@ void Player::_SaveCharacter(bool create, SQLTransaction& trans)
         std::ostringstream ss;
         ss << m_taxi;
         stmt->setString(index++, ss.str());
-        stmt->setUInt8(index++, m_cinematic);
         stmt->setUInt32(index++, m_Played_time[PLAYED_TIME_TOTAL]);
         stmt->setUInt32(index++, m_Played_time[PLAYED_TIME_LEVEL]);
         stmt->setFloat(index++, finiteAlways(_restBonus));
@@ -23820,54 +23457,6 @@ void Player::_SaveCharacter(bool create, SQLTransaction& trans)
     }
 
 	trans->Append(stmt);
-}
-
-void Player::_LoadGlyphs(PreparedQueryResult result)
-{ 
-    // SELECT talentGroup, glyph1, glyph2, glyph3, glyph4, glyph5, glyph6 from character_glyphs WHERE guid = '%u'
-    if (!result)
-        return;
-
-    do
-    {
-        Field* fields = result->Fetch();
-
-        uint8 spec = fields[0].GetUInt8();
-        if (spec >= m_specsCount)
-            continue;
-
-        m_Glyphs[spec][0] = fields[1].GetUInt16();
-        m_Glyphs[spec][1] = fields[2].GetUInt16();
-        m_Glyphs[spec][2] = fields[3].GetUInt16();
-        m_Glyphs[spec][3] = fields[4].GetUInt16();
-        m_Glyphs[spec][4] = fields[5].GetUInt16();
-        m_Glyphs[spec][5] = fields[6].GetUInt16();
-    }
-    while (result->NextRow());
-}
-
-void Player::_SaveGlyphs(SQLTransaction& trans)
-{ 
-	if (!NeedToSaveGlyphs())
-		return;
-
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_GLYPHS);
-    stmt->setUInt32(0, GetGUIDLow());
-    trans->Append(stmt);
-
-    for (uint8 spec = 0; spec < m_specsCount; ++spec)
-    {
-        uint8 index = 0;
-
-        stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_GLYPHS);
-        stmt->setUInt32(index++, GetGUIDLow());
-        stmt->setUInt8(index++, spec);
-
-        for (uint8 i = 0; i < MAX_GLYPH_SLOT_INDEX; ++i)
-            stmt->setUInt16(index++, uint16(m_Glyphs[spec][i]));
-
-        trans->Append(stmt);
-    }
 }
 
 void Player::_LoadTalents(PreparedQueryResult result)
@@ -24032,12 +23621,6 @@ void Player::ActivateSpec(uint8 spec)
 			SendLearnPacket(itr->first, false);
 	}
 
-    // xinef: remove glyph auras
-    for (uint8 slot = 0; slot < MAX_GLYPH_SLOT_INDEX; ++slot)
-        if (uint32 glyphId = m_Glyphs[GetActiveSpec()][slot])
-            if (GlyphPropertiesEntry const* glyphEntry = sGlyphPropertiesStore.LookupEntry(glyphId))
-                RemoveAurasDueToSpell(glyphEntry->SpellId);
-
 	// xinef: set active spec as new one
     SetActiveSpec(spec);
     uint32 spentTalents = 0;
@@ -24074,12 +23657,6 @@ void Player::ActivateSpec(uint8 spec)
 		else if (!itr->second->IsInSpec(oldSpec) && itr->second->IsInSpec(spec))
 			SendLearnPacket(itr->first, true);
 	}
-
-    // xinef: apply glyphs from second spec
-    for (uint8 slot = 0; slot < MAX_GLYPH_SLOT_INDEX; ++slot)
-        if (uint32 glyphId = m_Glyphs[GetActiveSpec()][slot])
-            if (GlyphPropertiesEntry const* glyphEntry = sGlyphPropertiesStore.LookupEntry(glyphId))
-                CastSpell(this, glyphEntry->SpellId, TriggerCastFlags(TRIGGERED_FULL_MASK&~(TRIGGERED_IGNORE_SHAPESHIFT|TRIGGERED_IGNORE_CASTER_AURASTATE)));
 
     m_usedTalentCount = spentTalents;
     InitTalentForLevel();

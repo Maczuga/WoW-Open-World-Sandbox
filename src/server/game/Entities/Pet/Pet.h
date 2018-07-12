@@ -178,7 +178,7 @@ class Pet : public Guardian
 		uint8 asynchLoadType;
 
     private:
-        void SaveToDB(uint32, uint8, uint32)                // override of Creature::SaveToDB     - must not be called
+        void SaveToDB(uint32, uint32)                       // override of Creature::SaveToDB     - must not be called
         {
             ASSERT(false);
         }

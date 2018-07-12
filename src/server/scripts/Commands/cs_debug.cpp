@@ -41,10 +41,6 @@ public:
 
     std::vector<ChatCommand> GetCommands() const
     {
-        static std::vector<ChatCommand> debugPlayCommandTable =
-        {
-            { "sound",          SEC_GAMEMASTER,      false, &HandleDebugPlaySoundCommand,       "" }
-        };
         static std::vector<ChatCommand> debugSendCommandTable =
         {
             { "buyerror",       SEC_ADMINISTRATOR,  false, &HandleDebugSendBuyErrorCommand,       "" },
@@ -70,7 +66,6 @@ public:
             { "getvalue",       SEC_ADMINISTRATOR,  false, &HandleDebugGetValueCommand,        "" },
             { "getitemvalue",   SEC_ADMINISTRATOR,  false, &HandleDebugGetItemValueCommand,    "" },
             { "Mod32Value",     SEC_ADMINISTRATOR,  false, &HandleDebugMod32ValueCommand,      "" },
-            { "play",           SEC_GAMEMASTER,      false, NULL,              "", debugPlayCommandTable },
             { "send",           SEC_ADMINISTRATOR,  false, NULL,              "", debugSendCommandTable },
             { "setaurastate",   SEC_ADMINISTRATOR,  false, &HandleDebugSetAuraStateCommand,    "" },
             { "setitemvalue",   SEC_ADMINISTRATOR,  false, &HandleDebugSetItemValueCommand,    "" },
@@ -92,44 +87,6 @@ public:
 			{ "wpgps",          SEC_ADMINISTRATOR,  false, &HandleWPGPSCommand,    "" }
         };
         return commandTable;
-    }
-
-    //Play sound
-    static bool HandleDebugPlaySoundCommand(ChatHandler* handler, char const* args)
-    {
-        // USAGE: .debug playsound #soundid
-        // #soundid - ID decimal number from SoundEntries.dbc (1st column)
-        if (!*args)
-        {
-            handler->SendSysMessage(LANG_BAD_VALUE);
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
-
-        uint32 soundId = atoi((char*)args);
-
-        if (!sSoundEntriesStore.LookupEntry(soundId))
-        {
-            handler->PSendSysMessage(LANG_SOUND_NOT_EXIST, soundId);
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
-
-        Unit* unit = handler->getSelectedUnit();
-        if (!unit)
-        {
-            handler->SendSysMessage(LANG_SELECT_CHAR_OR_CREATURE);
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
-
-        if (handler->GetSession()->GetPlayer()->GetTarget())
-            unit->PlayDistanceSound(soundId, handler->GetSession()->GetPlayer());
-        else
-            unit->PlayDirectSound(soundId, handler->GetSession()->GetPlayer());
-
-        handler->PSendSysMessage(LANG_YOU_HEAR_SOUND, soundId);
-        return true;
     }
 
     static bool HandleDebugSendSpellFailCommand(ChatHandler* handler, char const* args)

@@ -114,7 +114,6 @@ public:
             { "unpossess",          SEC_ADMINISTRATOR,      false, HandleUnPossessCommand,              "" },
             { "bindsight",          SEC_ADMINISTRATOR,      false, HandleBindSightCommand,              "" },
             { "unbindsight",        SEC_ADMINISTRATOR,      false, HandleUnbindSightCommand,            "" },
-            { "playall",            SEC_GAMEMASTER,         false, HandlePlayAllCommand,                "" },
             { "mailbox",            SEC_ADMINISTRATOR,      false, &HandleMailBoxCommand,               "" }
         };
         return commandTable;
@@ -2647,28 +2646,6 @@ public:
         else
             handler->PSendSysMessage(LANG_GROUP_NOT_IN_GROUP, nameTarget.c_str());
 
-        return true;
-    }
-
-    static bool HandlePlayAllCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        uint32 soundId = atoi((char*)args);
-
-        if (!sSoundEntriesStore.LookupEntry(soundId))
-        {
-            handler->PSendSysMessage(LANG_SOUND_NOT_EXIST, soundId);
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
-
-        WorldPacket data(SMSG_PLAY_SOUND, 4);
-        data << uint32(soundId) << handler->GetSession()->GetPlayer()->GetGUID();
-        sWorld->SendGlobalMessage(&data);
-
-        handler->PSendSysMessage(LANG_COMMAND_PLAYED_TO_ALL, soundId);
         return true;
     }
 

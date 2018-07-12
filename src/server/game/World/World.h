@@ -527,11 +527,6 @@ class World
         /// Get the current Message of the Day
         const char* GetMotd() const;
 
-        /// Set the string for new characters (first login)
-        void SetNewCharString(std::string const& str) { m_newCharString = str; }
-        /// Get the string for new characters (first login)
-        std::string const& GetNewCharString() const { return m_newCharString; }
-
         LocaleConstant GetDefaultDbcLocale() const { return m_defaultDbcLocale; }
 
         /// Get the path where data (dbc, maps) are stored on disk

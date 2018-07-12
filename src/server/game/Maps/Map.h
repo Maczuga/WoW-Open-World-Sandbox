@@ -349,11 +349,6 @@ class Map : public GridRefManager<NGridType>
         virtual bool CanEnter(Player* /*player*/, bool loginCheck = false) { return true; }
         const char* GetMapName() const;
 
-        // have meaning only for instanced map (that have set real difficulty)
-        Difficulty GetDifficulty() const { return Difficulty(GetSpawnMode()); }
-        bool IsRegularDifficulty() const { return GetDifficulty() == REGULAR_DIFFICULTY; }
-        MapDifficulty const* GetMapDifficulty() const;
-
         bool GetEntrancePos(int32 &mapid, float &x, float &y)
         {
             if (!i_mapEntry)

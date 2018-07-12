@@ -600,7 +600,7 @@ enum GOState
 struct GameObjectData
 {
     explicit GameObjectData() : id(0), mapid(0), phaseMask(0), posX(0.0f), posY(0.0f), posZ(0.0f), orientation(0.0f), spawntimesecs(0),
-                                animprogress(0), go_state(GO_STATE_ACTIVE), spawnMask(0), artKit(0), dbData(true) { }
+                                animprogress(0), go_state(GO_STATE_ACTIVE), artKit(0), dbData(true) { }
     uint32 id;                                              // entry in gamobject_template
     uint16 mapid;
     uint32 phaseMask;
@@ -612,7 +612,6 @@ struct GameObjectData
     int32  spawntimesecs;
     uint32 animprogress;
     GOState go_state;
-    uint8 spawnMask;
     uint8 artKit;
     bool dbData;
 };
@@ -665,7 +664,7 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Mov
         int64 GetPackedWorldRotation() const { return m_packedRotation; }
 
         void SaveToDB();
-        void SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask);
+        void SaveToDB(uint32 mapid, uint32 phaseMask);
         bool LoadFromDB(uint32 guid, Map* map) { return LoadGameObjectFromDB(guid, map, false); }
         bool LoadGameObjectFromDB(uint32 guid, Map* map, bool addToMap = true);
         void DeleteFromDB();

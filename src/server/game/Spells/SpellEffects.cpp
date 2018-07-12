@@ -138,7 +138,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectPickPocket,                               // 71 SPELL_EFFECT_PICKPOCKET
     &Spell::EffectAddFarsight,                              // 72 SPELL_EFFECT_ADD_FARSIGHT
     &Spell::EffectUntrainTalents,                           // 73 SPELL_EFFECT_UNTRAIN_TALENTS
-    &Spell::EffectApplyGlyph,                               // 74 SPELL_EFFECT_APPLY_GLYPH
+    &Spell::EffectUnused,                                   // 74 SPELL_EFFECT_APPLY_GLYPH
     &Spell::EffectHealMechanical,                           // 75 SPELL_EFFECT_HEAL_MECHANICAL          one spell: Mechanical Patch Kit
     &Spell::EffectSummonObjectWild,                         // 76 SPELL_EFFECT_SUMMON_OBJECT_WILD
     &Spell::EffectScriptEffect,                             // 77 SPELL_EFFECT_SCRIPT_EFFECT
@@ -195,8 +195,8 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectApplyAreaAura,                            //128 SPELL_EFFECT_APPLY_AREA_AURA_FRIEND
     &Spell::EffectApplyAreaAura,                            //129 SPELL_EFFECT_APPLY_AREA_AURA_ENEMY
     &Spell::EffectRedirectThreat,                           //130 SPELL_EFFECT_REDIRECT_THREAT
-    &Spell::EffectPlaySound,                                //131 SPELL_EFFECT_PLAYER_NOTIFICATION      sound id in misc value (SoundEntries.dbc)
-    &Spell::EffectPlayMusic,                                //132 SPELL_EFFECT_PLAY_MUSIC               sound id in misc value (SoundEntries.dbc)
+    &Spell::EffectNULL,                                     //131 SPELL_EFFECT_PLAYER_NOTIFICATION      sound id in misc value (SoundEntries.dbc)
+    &Spell::EffectNULL,                                     //132 SPELL_EFFECT_PLAY_MUSIC               sound id in misc value (SoundEntries.dbc)
     &Spell::EffectUnlearnSpecialization,                    //133 SPELL_EFFECT_UNLEARN_SPECIALIZATION   unlearn profession specialization
     &Spell::EffectKillCredit,                               //134 SPELL_EFFECT_KILL_CREDIT              misc value is creature entry
     &Spell::EffectNULL,                                     //135 SPELL_EFFECT_CALL_PET
@@ -220,7 +220,7 @@ pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
     &Spell::EffectCreateTamedPet,                           //153 SPELL_EFFECT_CREATE_TAMED_PET         misc value is creature entry
     &Spell::EffectDiscoverTaxi,                             //154 SPELL_EFFECT_DISCOVER_TAXI
     &Spell::EffectTitanGrip,                                //155 SPELL_EFFECT_TITAN_GRIP Allows you to equip two-handed axes, maces and swords in one hand, but you attack $49152s1% slower than normal.
-    &Spell::EffectEnchantItemPrismatic,                     //156 SPELL_EFFECT_ENCHANT_ITEM_PRISMATIC
+    &Spell::EffectNULL,                                     //156 SPELL_EFFECT_ENCHANT_ITEM_PRISMATIC
     &Spell::EffectCreateItem2,                              //157 SPELL_EFFECT_CREATE_ITEM_2            create item or create item template and replace by some randon spell loot item
     &Spell::EffectMilling,                                  //158 SPELL_EFFECT_MILLING                  milling
     &Spell::EffectRenamePet,                                //159 SPELL_EFFECT_ALLOW_RENAME_PET         allow rename pet once again
@@ -2809,62 +2809,6 @@ void Spell::EffectEnchantItemPerm(SpellEffIndex effIndex)
     }
 }
 
-void Spell::EffectEnchantItemPrismatic(SpellEffIndex effIndex)
-{
-    if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
-        return;
-
-    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-        return;
-    if (!itemTarget)
-        return;
-
-    Player* p_caster = m_caster->ToPlayer();
-
-    uint32 enchant_id = m_spellInfo->Effects[effIndex].MiscValue;
-    if (!enchant_id)
-        return;
-
-    SpellItemEnchantmentEntry const* pEnchant = sSpellItemEnchantmentStore.LookupEntry(enchant_id);
-    if (!pEnchant)
-        return;
-
-    // support only enchantings with add socket in this slot
-    {
-        bool add_socket = false;
-        for (uint8 i = 0; i < MAX_ITEM_ENCHANTMENT_EFFECTS; ++i)
-        {
-            if (pEnchant->type[i] == ITEM_ENCHANTMENT_TYPE_PRISMATIC_SOCKET)
-            {
-                add_socket = true;
-                break;
-            }
-        }
-        if (!add_socket)
-        {
-            sLog->outError("Spell::EffectEnchantItemPrismatic: attempt apply enchant spell %u with SPELL_EFFECT_ENCHANT_ITEM_PRISMATIC (%u) but without ITEM_ENCHANTMENT_TYPE_PRISMATIC_SOCKET (%u), not suppoted yet.",
-                m_spellInfo->Id, SPELL_EFFECT_ENCHANT_ITEM_PRISMATIC, ITEM_ENCHANTMENT_TYPE_PRISMATIC_SOCKET);
-            return;
-        }
-    }
-
-    // item can be in trade slot and have owner diff. from caster
-    Player* item_owner = itemTarget->GetOwner();
-    if (!item_owner)
-        return;
-
-    // remove old enchanting before applying new if equipped
-    item_owner->ApplyEnchantment(itemTarget, PRISMATIC_ENCHANTMENT_SLOT, false);
-
-    itemTarget->SetEnchantment(PRISMATIC_ENCHANTMENT_SLOT, enchant_id, 0, 0, m_caster->GetGUID());
-
-    // add new enchanting if equipped
-    item_owner->ApplyEnchantment(itemTarget, PRISMATIC_ENCHANTMENT_SLOT, true);
-
-    item_owner->RemoveTradeableItem(itemTarget);
-    itemTarget->ClearSoulboundTradeable(item_owner);
-}
-
 void Spell::EffectEnchantItemTmp(SpellEffIndex effIndex)
 {
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
@@ -4321,59 +4265,6 @@ void Spell::EffectActivateObject(SpellEffIndex /*effIndex*/)
 	// xinef: pass player to allow gossip scripts to work
 	//
 	//gameObjTarget->GetMap()->ScriptCommandStart(activateCommand, 0, player ? player : m_caster, gameObjTarget);
-}
-
-void Spell::EffectApplyGlyph(SpellEffIndex effIndex)
-{
-    if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT)
-        return;
-
-    if (m_caster->GetTypeId() != TYPEID_PLAYER || m_glyphIndex >= MAX_GLYPH_SLOT_INDEX)
-        return;
-
-    Player* player = m_caster->ToPlayer();
-
-    // glyph sockets level requirement
-    uint8 minLevel = 0;
-    switch (m_glyphIndex)
-    {
-        case 0:
-        case 1: minLevel = 15; break;
-        case 2: minLevel = 50; break;
-        case 3: minLevel = 30; break;
-        case 4: minLevel = 70; break;
-        case 5: minLevel = 80; break;
-    }
-    if (minLevel && m_caster->getLevel() < minLevel)
-    {
-        SendCastResult(SPELL_FAILED_GLYPH_SOCKET_LOCKED);
-        return;
-    }
-
-    // apply new one
-    if (uint32 glyph = m_spellInfo->Effects[effIndex].MiscValue)
-    {
-        if (GlyphPropertiesEntry const* glyphEntry = sGlyphPropertiesStore.LookupEntry(glyph))
-        {
-            if (GlyphSlotEntry const* glyphSlotEntry = sGlyphSlotStore.LookupEntry(player->GetGlyphSlot(m_glyphIndex)))
-            {
-                if (glyphEntry->TypeFlags != glyphSlotEntry->TypeFlags)
-                {
-                    SendCastResult(SPELL_FAILED_INVALID_GLYPH);
-                    return;                                 // glyph slot mismatch
-                }
-            }
-
-            // remove old glyph aura
-            if (uint32 oldGlyph = player->GetGlyph(m_glyphIndex))
-                if (GlyphPropertiesEntry const* oldGlyphEntry = sGlyphPropertiesStore.LookupEntry(oldGlyph))
-                    player->RemoveAurasDueToSpell(oldGlyphEntry->SpellId);
-
-            player->CastSpell(m_caster, glyphEntry->SpellId, TriggerCastFlags(TRIGGERED_FULL_MASK&~(TRIGGERED_IGNORE_SHAPESHIFT|TRIGGERED_IGNORE_CASTER_AURASTATE)));
-            player->SetGlyph(m_glyphIndex, glyph, !player->GetSession()->PlayerLoading());
-            player->SendTalentsInfoData(false);
-        }
-    }
 }
 
 void Spell::EffectEnchantHeldItem(SpellEffIndex effIndex)
@@ -5931,27 +5822,6 @@ void Spell::EffectRenamePet(SpellEffIndex /*effIndex*/)
     unitTarget->SetByteFlag(UNIT_FIELD_BYTES_2, 2, UNIT_CAN_BE_RENAMED);
 }
 
-void Spell::EffectPlayMusic(SpellEffIndex effIndex)
-{
-    if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
-        return;
-
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
-        return;
-
-    uint32 soundid = m_spellInfo->Effects[effIndex].MiscValue;
-
-    if (!sSoundEntriesStore.LookupEntry(soundid))
-    {
-        sLog->outError("EffectPlayMusic: Sound (Id: %u) not exist in spell %u.", soundid, m_spellInfo->Id);
-        return;
-    }
-
-    WorldPacket data(SMSG_PLAY_MUSIC, 4);
-    data << uint32(soundid);
-    unitTarget->ToPlayer()->GetSession()->SendPacket(&data);
-}
-
 void Spell::EffectSpecCount(SpellEffIndex /*effIndex*/)
 {
     if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
@@ -5972,37 +5842,6 @@ void Spell::EffectActivateSpec(SpellEffIndex /*effIndex*/)
         return;
 
     unitTarget->ToPlayer()->ActivateSpec(damage-1);  // damage is 1 or 2, spec is 0 or 1
-}
-
-void Spell::EffectPlaySound(SpellEffIndex effIndex)
-{
-    if (effectHandleMode != SPELL_EFFECT_HANDLE_HIT_TARGET)
-        return;
-
-    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
-        return;
-
-    switch (m_spellInfo->Id)
-    {
-        case 58730: // Restricted Flight Area
-        case 58600: // Restricted Flight Area
-            unitTarget->ToPlayer()->GetSession()->SendNotification(LANG_ZONE_NOFLYZONE);
-            break;
-        default:
-            break;
-    }
-
-    uint32 soundId = m_spellInfo->Effects[effIndex].MiscValue;
-
-    if (!sSoundEntriesStore.LookupEntry(soundId))
-    {
-        sLog->outError("EffectPlayerSound: Sound (Id: %u) not exist in spell %u.", soundId, m_spellInfo->Id);
-        return;
-    }
-
-    WorldPacket data(SMSG_PLAY_SOUND, 4);
-    data << uint32(soundId);
-    unitTarget->ToPlayer()->GetSession()->SendPacket(&data);
 }
 
 void Spell::EffectRemoveAura(SpellEffIndex effIndex)

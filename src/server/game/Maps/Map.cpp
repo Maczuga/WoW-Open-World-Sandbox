@@ -2489,11 +2489,6 @@ template void Map::RemoveFromMap(Creature*, bool);
 template void Map::RemoveFromMap(GameObject*, bool);
 template void Map::RemoveFromMap(DynamicObject*, bool);
 
-MapDifficulty const* Map::GetMapDifficulty() const
-{
-    return GetMapDifficultyData(GetId(), GetDifficulty());
-}
-
 Player* Map::GetPlayer(uint64 guid)
 { 
     return ObjectAccessor::GetObjectInMap(guid, this, (Player*)NULL);

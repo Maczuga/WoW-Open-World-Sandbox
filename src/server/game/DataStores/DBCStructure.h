@@ -108,16 +108,6 @@ struct AreaTriggerEntry
     float   box_orientation;                                // 9        m_box_yaw
 };
 
-struct AuctionHouseEntry
-{
-    uint32    houseId;                                      // 0 index
-    uint32    faction;                                      // 1 id of faction.dbc for player factions associated with city
-    uint32    depositPercent;                               // 2 1/3 from real
-    uint32    cutPercent;                                   // 3
-    //char*     name[16];                                   // 4-19
-                                                            // 20 string flag, unused
-};
-
 struct BarberShopStyleEntry
 {
     uint32  Id;                                             // 0
@@ -209,27 +199,6 @@ struct ChrRacesEntry
     uint32      expansion;                                  // 68 (0 - original race, 1 - tbc addon, ...)
 };
 
-/* not used
-struct CinematicCameraEntry
-{
-    uint32      id;                                         // 0 index
-    char*       filename;                                   // 1
-    uint32      soundid;                                    // 2 in SoundEntries.dbc or 0
-    float       start_x;                                    // 3
-    float       start_y;                                    // 4
-    float       start_z;                                    // 5
-    float       unk6;                                       // 6 speed?
-};
-*/
-
-struct CinematicSequencesEntry
-{
-    uint32      Id;                                         // 0 index
-    //uint32      unk1;                                     // 1 always 0
-    //uint32      cinematicCamera;                          // 2 id in CinematicCamera.dbc
-                                                            // 3-9 always 0
-};
-
 struct CreatureDisplayInfoEntry
 {
     uint32      Displayid;                                  // 0        m_ID
@@ -303,24 +272,6 @@ struct CreatureTypeEntry
     //uint32    no_expirience;                              // 18 no exp? critters, non-combat pets, gas cloud.
 };
 
-/* not used
-struct CurrencyCategoryEntry
-{
-    uint32    ID;                                           // 0
-    uint32    Unk1;                                         // 1        0 for known categories and 3 for unknown one (3.0.9)
-    char*   Name[16];                                       // 2-17     name
-    //                                                      // 18       string flags
-};
-*/
-
-struct CurrencyTypesEntry
-{
-    //uint32    ID;                                         // 0        not used
-    uint32    ItemId;                                       // 1        used as real index
-    //uint32    Category;                                   // 2        may be category
-    uint32    BitIndex;                                     // 3        bit index in PLAYER_FIELD_KNOWN_CURRENCIES (1 << (index-1))
-};
-
 struct DestructibleModelDataEntry
 {
     uint32  Id;
@@ -342,18 +293,6 @@ struct DestructibleModelDataEntry
     //uint32  SmokeUnk3;
     //uint32  Unk4;
     //uint32  Unk5;
-};
-
-struct DungeonEncounterEntry
-{
-    uint32 id;                                              // 0        unique id
-    uint32 mapId;                                           // 1        map id
-    uint32 difficulty;                                      // 2        instance mode
-    //uint32 unk0;                                          // 3
-    uint32 encounterIndex;                                  // 4        encounter index for creating completed mask
-    char*  encounterName[16];                               // 5-20     encounter name
-    //uint32 nameFlags;                                     // 21
-    //uint32 unk1;                                          // 22
 };
 
 struct DurabilityCostsEntry
@@ -480,28 +419,6 @@ struct GameObjectDisplayInfoEntry
     //uint32  transport;  //18
 };
 
-struct GemPropertiesEntry
-{
-    uint32      ID;
-    uint32      spellitemenchantement;
-    uint32      color;
-};
-
-struct GlyphPropertiesEntry
-{
-    uint32  Id;
-    uint32  SpellId;
-    uint32  TypeFlags;
-    uint32  Unk1;                                           // GlyphIconId (SpellIcon.dbc)
-};
-
-struct GlyphSlotEntry
-{
-    uint32  Id;
-    uint32  TypeFlags;
-    uint32  Order;
-};
-
 // All Gt* DBC store data for 100 levels, some by 100 per class/race
 #define GT_MAX_LEVEL    100
 // gtOCTClassCombatRatingScalar.dbc stores data for 32 ratings, look at MAX_COMBAT_RATING for real used amount
@@ -567,24 +484,6 @@ struct GtRegenMPPerSptEntry
     float    ratio;
 };
 
-/* no used
-struct HolidayDescriptionsEntry
-{
-    uint32 ID;                                              // 0, this is NOT holiday id
-    //char*     name[16]                                    // 1-16 m_name_lang
-                                                            // 17 name flags
-};
-*/
-
-/* no used
-struct HolidayNamesEntry
-{
-    uint32 ID;                                              // 0, this is NOT holiday id
-    //char*     name[16]                                    // 1-16 m_name_lang
-    // 17 name flags
-};
-*/
-
 #define MAX_HOLIDAY_DURATIONS 10
 #define MAX_HOLIDAY_DATES 26
 #define MAX_HOLIDAY_FLAGS 10
@@ -639,14 +538,6 @@ struct ItemDisplayInfoEntry
                                                             // 10       m_itemVisual[8]
                                                             // 11       m_particleColorID
 };
-
-//struct ItemCondExtCostsEntry
-//{
-//    uint32      ID;
-//    uint32      condExtendedCost;                         // ItemTemplate::CondExtendedCost
-//    uint32      itemextendedcostentry;                    // ItemTemplate::ExtendedCost
-//    uint32      arenaseason;                              // arena season number(1-4)
-//};
 
 #define MAX_ITEM_EXTENDED_COST_REQUIREMENTS 5
 
@@ -763,14 +654,6 @@ struct LockEntry
     //uint32      Action[MAX_LOCK_CASE];                    // 25-32    m_Action
 };
 
-struct MailTemplateEntry
-{
-    uint32      ID;                                         // 0
-    //char*       subject[16];                              // 1-16
-                                                            // 17 name flags, unused
-    char*       content[16];                              // 18-33
-};
-
 struct MapEntry
 {
     uint32  MapID;                                          // 0
@@ -814,25 +697,6 @@ struct MapEntry
     {
         return MapID == 0 || MapID == 1 || MapID == 530 || MapID == 571;
     }
-};
-
-struct MapDifficultyEntry
-{
-    //uint32      Id;                                       // 0
-    uint32      MapId;                                      // 1
-    uint32      Difficulty;                                 // 2 (for arenas: arena slot)
-    char*       areaTriggerText;                            // 3-18 text showed when transfer to map failed (missing requirements)
-    //uint32      textFlags;                                // 19
-    uint32      resetTime;                                  // 20
-    uint32      maxPlayers;                                 // 21
-    //char*       difficultyString;                         // 22
-};
-
-struct MovieEntry
-{
-    uint32      Id;                                         // 0 index
-    //char*       filename;                                 // 1
-    //uint32      unk2;                                     // 2 always 100
 };
 
 #define MAX_OVERRIDE_SPELL 10
@@ -1019,22 +883,6 @@ struct SkillTiersEntry
     uint32 Id;                                              // 0
     //uint32 StepCost[MAX_SKILL_STEP];                      // 1-16
     uint32 MaxSkill[MAX_SKILL_STEP];                        // 17-32
-};
-
-struct SoundEntriesEntry
-{
-    uint32    Id;                                           // 0        m_ID
-    //uint32    Type;                                       // 1        m_soundType
-    //char*     InternalName;                               // 2        m_name
-    //char*     FileName[10];                               // 3-12     m_File[10]
-    //uint32    Unk13[10];                                  // 13-22    m_Freq[10]
-    //char*     Path;                                       // 23       m_DirectoryBase
-                                                            // 24       m_volumeFloat
-                                                            // 25       m_flags
-                                                            // 26       m_minDistance
-                                                            // 27       m_distanceCutoff
-                                                            // 28       m_EAXDef
-                                                            // 29       new in 3.1
 };
 
 #define MAX_SPELL_EFFECTS 3
@@ -1267,12 +1115,6 @@ struct SpellItemEnchantmentConditionEntry
     //uint8   Logic[5]                                      // 25-30    m_logic[5]
 };
 
-struct StableSlotPricesEntry
-{
-    uint32 Slot;
-    uint32 Price;
-};
-
 struct SummonPropertiesEntry
 {
     uint32  Id;                                             // 0
@@ -1350,12 +1192,6 @@ struct TaxiPathNodeEntry
     uint32    delay;                                        // 8        m_delay
     uint32    arrivalEventID;                               // 9        m_arrivalEventID
     uint32    departureEventID;                             // 10       m_departureEventID
-};
-
-struct TeamContributionPointsEntry
-{
-    //uint32    entry;                                      // 0
-    float     value;                                        // 1 (???)
 };
 
 struct TotemCategoryEntry
@@ -1546,59 +1382,12 @@ struct WorldSafeLocsEntry
                                                             // 21 name flags, unused
 };
 
-/*
-struct WorldStateSounds
-{
-    uint32    ID;                                           // 0        Worldstate
-    uint32    unk;                                          // 1
-    uint32    areaTable;                                    // 2
-    uint32    WMOAreaTable;                                 // 3
-    uint32    zoneIntroMusicTable;                          // 4
-    uint32    zoneIntroMusic;                               // 5
-    uint32    zoneMusic;                                    // 6
-    uint32    soundAmbience;                                // 7
-    uint32    soundProviderPreferences;                     // 8
-};
-*/
-
-/*
-struct WorldStateUI
-{
-    uint32    ID;                                           // 0
-    uint32    map_id;                                       // 1        Can be -1 to show up everywhere.
-    uint32    zone;                                         // 2        Can be zero for "everywhere".
-    uint32    phaseMask;                                    // 3        Phase this WorldState is avaliable in
-    uint32    icon;                                         // 4        The icon that is used in the interface.
-    char*     textureFilename;                              // 5
-    char*     text;                                         // 6-21     The worldstate text
-    char*     description;                                  // 22-38    Text shown when hovering mouse on icon
-    uint32    worldstateID;                                 // 39       This is the actual ID used
-    uint32    type;                                         // 40       0 = unknown, 1 = unknown, 2 = not shown in ui, 3 = wintergrasp
-    uint32    unk1;                                         // 41
-    uint32    unk2;                                         // 43
-    uint32    unk3;                                         // 44-58
-    uint32    unk4;                                         // 59-61    Used for some progress bars.
-    uint32    unk7;                                         // 62       Unused in 3.3.5a
-};
-*/
-
 // GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
 #if defined(__GNUC__)
 #pragma pack()
 #else
 #pragma pack(pop)
 #endif
-
-// Structures not used for casting to loaded DBC data and not required then packing
-struct MapDifficulty
-{
-    MapDifficulty() : resetTime(0), maxPlayers(0), hasErrorMessage(false) {}
-    MapDifficulty(uint32 _resetTime, uint32 _maxPlayers, bool _hasErrorMessage) : resetTime(_resetTime), maxPlayers(_maxPlayers), hasErrorMessage(_hasErrorMessage) {}
-
-    uint32 resetTime;
-    uint32 maxPlayers;
-    bool hasErrorMessage;
-};
 
 struct TalentSpellPos
 {

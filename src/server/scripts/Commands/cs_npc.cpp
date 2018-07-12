@@ -178,7 +178,7 @@ public:
 
 				Creature* creature = trans->CreateNPCPassenger(guid, &data);
 
-				creature->SaveToDB(trans->GetGOInfo()->moTransport.mapID, 1 << map->GetSpawnMode(), chr->GetPhaseMaskForSpawn());
+				creature->SaveToDB(trans->GetGOInfo()->moTransport.mapID, chr->GetPhaseMaskForSpawn());
 
 				sObjectMgr->AddCreatureToGrid(guid, &data);
 				return true;
@@ -191,7 +191,7 @@ public:
             return false;
         }
 
-        creature->SaveToDB(map->GetId(), (1 << map->GetSpawnMode()), chr->GetPhaseMaskForSpawn());
+        creature->SaveToDB(map->GetId(), chr->GetPhaseMaskForSpawn());
 
         uint32 db_guid = creature->GetDBTableGUIDLow();
 

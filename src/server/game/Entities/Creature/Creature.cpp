@@ -960,10 +960,10 @@ void Creature::SaveToDB()
     }
 
     uint32 mapId = GetTransport() && GetTransport()->ToMotionTransport() ? GetTransport()->GetGOInfo()->moTransport.mapID : GetMapId();
-    SaveToDB(mapId, data->spawnMask, GetPhaseMask());
+    SaveToDB(mapId, GetPhaseMask());
 }
 
-void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
+void Creature::SaveToDB(uint32 mapid, uint32 phaseMask)
 { 
 //	return;
 
@@ -1025,7 +1025,6 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     // prevent add data integrity problems
     data.movementType = !m_respawnradius && GetDefaultMovementType() == RANDOM_MOTION_TYPE
         ? IDLE_MOTION_TYPE : GetDefaultMovementType();
-    data.spawnMask = spawnMask;
     data.npcflag = npcflag;
     data.unit_flags = unit_flags;
     data.dynamicflags = dynamicflags;
@@ -1043,7 +1042,6 @@ void Creature::SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask)
     stmt->setUInt32(index++, m_DBTableGuid);
     stmt->setUInt32(index++, GetEntry());
     stmt->setUInt16(index++, uint16(mapid));
-    stmt->setUInt8(index++, spawnMask);
     stmt->setUInt32(index++, GetPhaseMask());
     stmt->setUInt32(index++, displayId);
     stmt->setInt32(index++, int32(GetCurrentEquipmentId()));

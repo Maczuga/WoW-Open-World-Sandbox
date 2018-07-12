@@ -166,7 +166,7 @@ class CharacterCreateInfo
 class WorldSession
 {
     public:
-        WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, uint32 recruiter, bool isARecruiter, bool skipQueue);
+        WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8 expansion, time_t mute_time, LocaleConstant locale, bool skipQueue);
         ~WorldSession();
 
         bool PlayerLoading() const { return m_playerLoading; }
@@ -642,9 +642,6 @@ class WorldSession
         void HandleComplainOpcode(WorldPacket& recvData);
         void HandleRequestPetInfoOpcode(WorldPacket& recvData);
 
-        // Socket gem
-        void HandleSocketOpcode(WorldPacket& recvData);
-
         void HandleCancelTempEnchantmentOpcode(WorldPacket& recvData);
 
         void HandleItemRefundInfoRequest(WorldPacket& recvData);
@@ -670,7 +667,6 @@ class WorldSession
         void HandleSpellClick(WorldPacket& recvData);
         void HandleMirrorImageDataRequest(WorldPacket& recvData);
         void HandleAlterAppearance(WorldPacket& recvData);
-        void HandleRemoveGlyph(WorldPacket& recvData);
         void HandleCharCustomize(WorldPacket& recvData);
         void HandleEquipmentSetSave(WorldPacket& recvData);
         void HandleEquipmentSetDelete(WorldPacket& recvData);

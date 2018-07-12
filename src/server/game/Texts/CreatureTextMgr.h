@@ -44,7 +44,6 @@ struct CreatureTextEntry
     float probability;
     Emote emote;
     uint32 duration;
-    uint32 sound;
     CreatureTextRange TextRange;
 };
 

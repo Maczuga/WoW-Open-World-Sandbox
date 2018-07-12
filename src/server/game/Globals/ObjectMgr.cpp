@@ -1130,13 +1130,6 @@ void ObjectMgr::LoadLinkedRespawn()
                     break;
                 }
 
-                if (!(master->spawnMask & slave->spawnMask))  // they must have a possibility to meet (normal/heroic difficulty)
-                {
-                    sLog->outErrorDb("LinkedRespawn: Creature '%u' linking to '%u' with not corresponding spawnMask", guidLow, linkedGuidLow);
-                    error = true;
-                    break;
-                }
-
                 guid = MAKE_NEW_GUID(guidLow, slave->id, HIGHGUID_UNIT);
                 linkedGuid = MAKE_NEW_GUID(linkedGuidLow, master->id, HIGHGUID_UNIT);
                 break;
@@ -1155,13 +1148,6 @@ void ObjectMgr::LoadLinkedRespawn()
                 if (!master)
                 {
                     sLog->outErrorDb("Couldn't get gameobject data for GUIDLow %u", linkedGuidLow);
-                    error = true;
-                    break;
-                }
-
-                if (!(master->spawnMask & slave->spawnMask))  // they must have a possibility to meet (normal/heroic difficulty)
-                {
-                    sLog->outErrorDb("LinkedRespawn: Creature '%u' linking to '%u' with not corresponding spawnMask", guidLow, linkedGuidLow);
                     error = true;
                     break;
                 }
@@ -1188,13 +1174,6 @@ void ObjectMgr::LoadLinkedRespawn()
                     break;
                 }
 
-                if (!(master->spawnMask & slave->spawnMask))  // they must have a possibility to meet (normal/heroic difficulty)
-                {
-                    sLog->outErrorDb("LinkedRespawn: Creature '%u' linking to '%u' with not corresponding spawnMask", guidLow, linkedGuidLow);
-                    error = true;
-                    break;
-                }
-
                 guid = MAKE_NEW_GUID(guidLow, slave->id, HIGHGUID_GAMEOBJECT);
                 linkedGuid = MAKE_NEW_GUID(linkedGuidLow, master->id, HIGHGUID_GAMEOBJECT);
                 break;
@@ -1213,13 +1192,6 @@ void ObjectMgr::LoadLinkedRespawn()
                 if (!master)
                 {
                     sLog->outErrorDb("Couldn't get creature data for GUIDLow %u", linkedGuidLow);
-                    error = true;
-                    break;
-                }
-
-                if (!(master->spawnMask & slave->spawnMask))  // they must have a possibility to meet (normal/heroic difficulty)
-                {
-                    sLog->outErrorDb("LinkedRespawn: Creature '%u' linking to '%u' with not corresponding spawnMask", guidLow, linkedGuidLow);
                     error = true;
                     break;
                 }
@@ -1260,12 +1232,6 @@ bool ObjectMgr::SetCreatureLinkedRespawn(uint32 guidLow, uint32 linkedGuidLow)
     if (!slave)
     {
         //sLog->outError("Creature '%u' linking to non-existent creature '%u'.", guidLow, linkedGuidLow);
-        return false;
-    }
-
-    if (!(master->spawnMask & slave->spawnMask))  // they must have a possibility to meet (normal/heroic difficulty)
-    {
-        sLog->outErrorDb("LinkedRespawn: Creature '%u' linking to '%u' with not corresponding spawnMask", guidLow, linkedGuidLow);
         return false;
     }
 
@@ -1373,8 +1339,8 @@ void ObjectMgr::LoadCreatures()
 
     //                                               0              1   2    3           4           5           6            7        8             9              10
     QueryResult result = WorldDatabase.Query("SELECT creature.guid, id, map, position_x, position_y, position_z, orientation, modelid, equipment_id, spawntimesecs, spawndist, "
-    //   11               12         13       14            15         16         17          18          19                20                   21
-        "currentwaypoint, curhealth, curmana, MovementType, spawnMask, phaseMask, eventEntry, pool_entry, creature.npcflag, creature.unit_flags, creature.dynamicflags "
+    //   11               12         13       14            15         16          17          18                19                   20
+        "currentwaypoint, curhealth, curmana, MovementType, phaseMask, eventEntry, pool_entry, creature.npcflag, creature.unit_flags, creature.dynamicflags "
         "FROM creature "
         "LEFT OUTER JOIN game_event_creature ON creature.guid = game_event_creature.guid "
         "LEFT OUTER JOIN pool_creature ON creature.guid = pool_creature.guid");
@@ -1385,13 +1351,6 @@ void ObjectMgr::LoadCreatures()
         sLog->outString();
         return;
     }
-
-    // Build single time for check spawnmask
-    std::map<uint32, uint32> spawnMasks;
-    for (uint32 i = 0; i < sMapStore.GetNumRows(); ++i)
-        if (sMapStore.LookupEntry(i))
-            if (GetMapDifficultyData(i, Difficulty(0)))
-                spawnMasks[i] |= (1 << 0);
 
     _creatureDataStore.rehash(result->GetRowCount());
     uint32 count = 0;
@@ -1424,13 +1383,12 @@ void ObjectMgr::LoadCreatures()
         data.curhealth      = fields[12].GetUInt32();
         data.curmana        = fields[13].GetUInt32();
         data.movementType   = fields[14].GetUInt8();
-        data.spawnMask      = fields[15].GetUInt8();
-        data.phaseMask      = fields[16].GetUInt32();
-        int16 gameEvent     = fields[17].GetInt8();
-        uint32 PoolId       = fields[18].GetUInt32();
-        data.npcflag        = fields[19].GetUInt32();
-        data.unit_flags     = fields[20].GetUInt32();
-        data.dynamicflags   = fields[21].GetUInt32();
+        data.phaseMask      = fields[15].GetUInt32();
+        int16 gameEvent     = fields[16].GetInt8();
+        uint32 PoolId       = fields[17].GetUInt32();
+        data.npcflag        = fields[18].GetUInt32();
+        data.unit_flags     = fields[19].GetUInt32();
+        data.dynamicflags   = fields[20].GetUInt32();
 
         MapEntry const* mapEntry = sMapStore.LookupEntry(data.mapid);
         if (!mapEntry)
@@ -1438,10 +1396,6 @@ void ObjectMgr::LoadCreatures()
             sLog->outErrorDb("Table `creature` have creature (GUID: %u) that spawned at not existed map (Id: %u), skipped.", guid, data.mapid);
             continue;
         }
-
-        // Skip spawnMask check for transport maps
-        if (!_transportMaps.count(data.mapid) && data.spawnMask & ~spawnMasks[data.mapid])
-            sLog->outErrorDb("Table `creature` have creature (GUID: %u) that have wrong spawn mask %u including not supported difficulty modes for map (Id: %u).", guid, data.spawnMask, data.mapid);
 
         // -1 random, 0 no equipment,
         if (data.equipmentId != 0)
@@ -1509,7 +1463,7 @@ void ObjectMgr::LoadCreatures()
 
 void ObjectMgr::AddCreatureToGrid(uint32 guid, CreatureData const* data)
 {
-    uint8 mask = data->spawnMask;
+    uint8 mask = 1;
     for (uint8 i = 0; mask != 0; i++, mask >>= 1)
     {
         if (mask & 1)
@@ -1523,7 +1477,7 @@ void ObjectMgr::AddCreatureToGrid(uint32 guid, CreatureData const* data)
 
 void ObjectMgr::RemoveCreatureFromGrid(uint32 guid, CreatureData const* data)
 {
-    uint8 mask = data->spawnMask;
+    uint8 mask = 1;
     for (uint8 i = 0; mask != 0; i++, mask >>= 1)
     {
         if (mask & 1)
@@ -1559,7 +1513,6 @@ uint32 ObjectMgr::AddGOData(uint32 entry, uint32 mapId, float x, float y, float 
     data.rotation.w     = rotation3;
     data.spawntimesecs  = spawntimedelay;
     data.animprogress   = 100;
-    data.spawnMask      = 1;
     data.go_state       = GO_STATE_READY;
     data.phaseMask      = PHASEMASK_NORMAL;
     data.artKit         = goinfo->type == GAMEOBJECT_TYPE_CAPTURE_POINT ? 21 : 0;
@@ -1643,7 +1596,6 @@ uint32 ObjectMgr::AddCreData(uint32 entry, uint32 mapId, float x, float y, float
     data.curhealth = stats->GenerateHealth(cInfo);
     data.curmana = stats->GenerateMana(cInfo);
     data.movementType = cInfo->MovementType;
-    data.spawnMask = 1;
     data.phaseMask = PHASEMASK_NORMAL;
     data.dbData = false;
     data.npcflag = cInfo->npcflag;
@@ -1679,8 +1631,8 @@ void ObjectMgr::LoadGameobjects()
 
     //                                                0                1   2    3           4           5           6
     QueryResult result = WorldDatabase.Query("SELECT gameobject.guid, id, map, position_x, position_y, position_z, orientation, "
-    //   7          8          9          10         11             12            13     14         15         16          17
-        "rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state, spawnMask, phaseMask, eventEntry, pool_entry "
+    //   7          8          9          10         11             12            13     14         15          16
+        "rotation0, rotation1, rotation2, rotation3, spawntimesecs, animprogress, state, phaseMask, eventEntry, pool_entry "
         "FROM gameobject LEFT OUTER JOIN game_event_gameobject ON gameobject.guid = game_event_gameobject.guid "
         "LEFT OUTER JOIN pool_gameobject ON gameobject.guid = pool_gameobject.guid");
 
@@ -1690,13 +1642,6 @@ void ObjectMgr::LoadGameobjects()
         sLog->outString();
         return;
     }
-
-    // build single time for check spawnmask
-    std::map<uint32, uint32> spawnMasks;
-    for (uint32 i = 0; i < sMapStore.GetNumRows(); ++i)
-        if (sMapStore.LookupEntry(i))
-            if (GetMapDifficultyData(i, Difficulty(0)))
-                spawnMasks[i] |= (1 << 0);
 
     _gameObjectDataStore.rehash(result->GetRowCount());
     do
@@ -1769,14 +1714,9 @@ void ObjectMgr::LoadGameobjects()
         }
         data.go_state       = GOState(go_state);
 
-        data.spawnMask      = fields[14].GetUInt8();
-
-        if (!_transportMaps.count(data.mapid) && data.spawnMask & ~spawnMasks[data.mapid])
-            sLog->outErrorDb("Table `gameobject` has gameobject (GUID: %u Entry: %u) that has wrong spawn mask %u including not supported difficulty modes for map (Id: %u), skip", guid, data.id, data.spawnMask, data.mapid);
-
-        data.phaseMask      = fields[15].GetUInt32();
-        int16 gameEvent     = fields[16].GetInt8();
-        uint32 PoolId        = fields[17].GetUInt32();
+        data.phaseMask      = fields[14].GetUInt32();
+        int16 gameEvent     = fields[15].GetInt8();
+        uint32 PoolId        = fields[16].GetUInt32();
 
         if (data.rotation.x < -1.0f || data.rotation.x > 1.0f)
         {
@@ -1839,7 +1779,7 @@ void ObjectMgr::LoadGameobjects()
 
 void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
 {
-    uint8 mask = data->spawnMask;
+    uint8 mask = 1;
     for (uint8 i = 0; mask != 0; i++, mask >>= 1)
     {
         if (mask & 1)
@@ -1853,7 +1793,7 @@ void ObjectMgr::AddGameobjectToGrid(uint32 guid, GameObjectData const* data)
 
 void ObjectMgr::RemoveGameobjectFromGrid(uint32 guid, GameObjectData const* data)
 {
-    uint8 mask = data->spawnMask;
+    uint8 mask = 1;
     for (uint8 i = 0; mask != 0; i++, mask >>= 1)
     {
         if (mask & 1)
@@ -1943,11 +1883,9 @@ void ObjectMgr::LoadItemTemplates()
                                              "spellppmRate_5, spellcooldown_5, spellcategory_5, spellcategorycooldown_5, bonding, description, PageText, LanguageID, PageMaterial, "
     //                                            106       107     108      109          110            111       112     113         114       115   116     117
                                              "startquest, lockid, Material, sheath, RandomProperty, RandomSuffix, block, itemset, MaxDurability, area, Map, BagFamily, "
-    //                                            118             119             120             121             122            123              124            125
-                                             "TotemCategory, socketColor_1, socketContent_1, socketColor_2, socketContent_2, socketColor_3, socketContent_3, socketBonus, "
-    //                                            126                 127                     128            129            130            131         132         133
-                                             "GemProperties, RequiredDisenchantSkill, ArmorDamageModifier, duration, ItemLimitCategory, HolidayId, ScriptName, DisenchantID, "
-    //                                           134        135            136
+    //                                            118        119                        120                 121             122            123        124            125
+                                             "TotemCategory, RequiredDisenchantSkill, ArmorDamageModifier, duration, ItemLimitCategory, HolidayId, ScriptName, DisenchantID, "
+    //                                           126        127            128          129
                                              "FoodType, minMoneyLoot, maxMoneyLoot, flagsCustom FROM item_template");
 
     if (!result)
@@ -2055,25 +1993,17 @@ void ObjectMgr::LoadItemTemplates()
         itemTemplate.BagFamily      = fields[117].GetUInt32();
         itemTemplate.TotemCategory  = fields[118].GetUInt32();
 
-        for (uint8 i = 0; i < MAX_ITEM_PROTO_SOCKETS; ++i)
-        {
-            itemTemplate.Socket[i].Color   = uint32(fields[119 + i*2].GetUInt8());
-            itemTemplate.Socket[i].Content = fields[120 + i*2].GetUInt32();
-        }
-
-        itemTemplate.socketBonus             = fields[125].GetUInt32();
-        itemTemplate.GemProperties           = fields[126].GetUInt32();
-        itemTemplate.RequiredDisenchantSkill = uint32(fields[127].GetInt16());
-        itemTemplate.ArmorDamageModifier     = fields[128].GetFloat();
-        itemTemplate.Duration                = fields[129].GetUInt32();
-        itemTemplate.ItemLimitCategory       = uint32(fields[130].GetInt16());
-        itemTemplate.HolidayId               = fields[131].GetUInt32();
-        itemTemplate.ScriptId                = sObjectMgr->GetScriptId(fields[132].GetCString());
-        itemTemplate.DisenchantID            = fields[133].GetUInt32();
-        itemTemplate.FoodType                = uint32(fields[134].GetUInt8());
-        itemTemplate.MinMoneyLoot            = fields[135].GetUInt32();
-        itemTemplate.MaxMoneyLoot            = fields[136].GetUInt32();
-        itemTemplate.FlagsCu                 = fields[137].GetUInt32();
+        itemTemplate.RequiredDisenchantSkill = uint32(fields[119].GetInt16());
+        itemTemplate.ArmorDamageModifier     = fields[120].GetFloat();
+        itemTemplate.Duration                = fields[121].GetUInt32();
+        itemTemplate.ItemLimitCategory       = uint32(fields[122].GetInt16());
+        itemTemplate.HolidayId               = fields[123].GetUInt32();
+        itemTemplate.ScriptId                = sObjectMgr->GetScriptId(fields[124].GetCString());
+        itemTemplate.DisenchantID            = fields[125].GetUInt32();
+        itemTemplate.FoodType                = uint32(fields[126].GetUInt8());
+        itemTemplate.MinMoneyLoot            = fields[127].GetUInt32();
+        itemTemplate.MaxMoneyLoot            = fields[128].GetUInt32();
+        itemTemplate.FlagsCu                 = fields[129].GetUInt32();
 
         // Checks
 
@@ -2435,33 +2365,11 @@ void ObjectMgr::LoadItemTemplates()
                     itemTemplate.BagFamily &= ~mask;
                     continue;
                 }
-
-                if (BAG_FAMILY_MASK_CURRENCY_TOKENS & mask)
-                {
-                    CurrencyTypesEntry const* ctEntry = sCurrencyTypesStore.LookupEntry(itemTemplate.ItemId);
-                    if (!ctEntry)
-                    {
-                        sLog->outErrorDb("Item (Entry: %u) has currency bag family bit set in BagFamily but not listed in CurrencyTypes.dbc, remove bit", entry);
-                        itemTemplate.BagFamily &= ~mask;
-                    }
-                }
             }
         }
 
         if (itemTemplate.TotemCategory && !sTotemCategoryStore.LookupEntry(itemTemplate.TotemCategory))
             sLog->outErrorDb("Item (Entry: %u) has wrong TotemCategory (%u)", entry, itemTemplate.TotemCategory);
-
-        for (uint8 j = 0; j < MAX_ITEM_PROTO_SOCKETS; ++j)
-        {
-            if (itemTemplate.Socket[j].Color && (itemTemplate.Socket[j].Color & SOCKET_COLOR_ALL) != itemTemplate.Socket[j].Color)
-            {
-                sLog->outErrorDb("Item (Entry: %u) has wrong socketColor_%d (%u)", entry, j+1, itemTemplate.Socket[j].Color);
-                itemTemplate.Socket[j].Color = 0;
-            }
-        }
-
-        if (itemTemplate.GemProperties && !sGemPropertiesStore.LookupEntry(itemTemplate.GemProperties))
-            sLog->outErrorDb("Item (Entry: %u) has wrong GemProperties (%u)", entry, itemTemplate.GemProperties);
 
         if (itemTemplate.FoodType >= MAX_PET_DIET)
         {
@@ -4279,27 +4187,6 @@ void ObjectMgr::LoadQuests()
                     qinfo->GetQuestId(), qinfo->RewardSpell, qinfo->RewardSpell);
                 qinfo->RewardSpell = 0;                    // no spell will be casted on player
             }
-        }
-
-        if (qinfo->RewardMailTemplateId)
-        {
-            if (!sMailTemplateStore.LookupEntry(qinfo->RewardMailTemplateId))
-            {
-                sLog->outErrorDb("Quest %u has `RewardMailTemplateId` = %u but mail template  %u does not exist, quest will not have a mail reward.",
-                    qinfo->GetQuestId(), qinfo->RewardMailTemplateId, qinfo->RewardMailTemplateId);
-                qinfo->RewardMailTemplateId = 0;               // no mail will send to player
-                qinfo->RewardMailDelay = 0;                // no mail will send to player
-            }
-            else if (usedMailTemplates.find(qinfo->RewardMailTemplateId) != usedMailTemplates.end())
-            {
-                std::map<uint32, uint32>::const_iterator used_mt_itr = usedMailTemplates.find(qinfo->RewardMailTemplateId);
-                sLog->outErrorDb("Quest %u has `RewardMailTemplateId` = %u but mail template  %u already used for quest %u, quest will not have a mail reward.",
-                    qinfo->GetQuestId(), qinfo->RewardMailTemplateId, qinfo->RewardMailTemplateId, used_mt_itr->second);
-                qinfo->RewardMailTemplateId = 0;               // no mail will send to player
-                qinfo->RewardMailDelay = 0;                // no mail will send to player
-            }
-            else
-                usedMailTemplates[qinfo->RewardMailTemplateId] = qinfo->GetQuestId();
         }
 
         if (qinfo->RewardNextQuest)

@@ -259,7 +259,7 @@ struct CreatureData
     CreatureData() : id(0), mapid(0), phaseMask(0), displayid(0), equipmentId(0),
                      posX(0.0f), posY(0.0f), posZ(0.0f), orientation(0.0f), spawntimesecs(0),
                      spawndist(0.0f), currentwaypoint(0), curhealth(0), curmana(0), movementType(0),
-                     spawnMask(0), npcflag(0), unit_flags(0), dynamicflags(0), dbData(true), overwrittenZ(false) { }
+                     npcflag(0), unit_flags(0), dynamicflags(0), dbData(true), overwrittenZ(false) { }
     uint32 id;                                              // entry in creature_template
     uint16 mapid;
     uint32 phaseMask;
@@ -275,7 +275,6 @@ struct CreatureData
     uint32 curhealth;
     uint32 curmana;
     uint8 movementType;
-    uint8 spawnMask;
     uint32 npcflag;
     uint32 unit_flags;                                      // enum UnitFlags mask values
     uint32 dynamicflags;
@@ -572,7 +571,7 @@ class Creature : public Unit, public GridObject<Creature>, public MovableMapObje
         bool LoadCreatureFromDB(uint32 guid, Map* map, bool addToMap = true, bool gridLoad = false);
         void SaveToDB();
                                                             // overriden in Pet
-        virtual void SaveToDB(uint32 mapid, uint8 spawnMask, uint32 phaseMask);
+        virtual void SaveToDB(uint32 mapid, uint32 phaseMask);
         virtual void DeleteFromDB();                        // overriden in Pet
 
         Loot loot;

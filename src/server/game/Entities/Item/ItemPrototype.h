@@ -220,16 +220,6 @@ enum BAG_FAMILY_MASK
     BAG_FAMILY_MASK_QUEST_ITEMS               = 0x00004000
 };
 
-enum SocketColor
-{
-    SOCKET_COLOR_META                           = 1,
-    SOCKET_COLOR_RED                            = 2,
-    SOCKET_COLOR_YELLOW                         = 4,
-    SOCKET_COLOR_BLUE                           = 8
-};
-
-#define SOCKET_COLOR_ALL (SOCKET_COLOR_META | SOCKET_COLOR_RED | SOCKET_COLOR_YELLOW | SOCKET_COLOR_BLUE)
-
 enum InventoryType
 {
     INVTYPE_NON_EQUIP                           = 0,
@@ -573,12 +563,6 @@ struct _Spell
     int32  SpellCategoryCooldown;
 };
 
-struct _Socket
-{
-    uint32 Color;
-    uint32 Content;
-};
-
 // GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
 #if defined(__GNUC__)
 #pragma pack()
@@ -654,9 +638,6 @@ struct ItemTemplate
     uint32 Map;                                             // id from Map.dbc
     uint32 BagFamily;                                       // bit mask (1 << id from ItemBagFamily.dbc)
     uint32 TotemCategory;                                   // id from TotemCategory.dbc
-    _Socket Socket[MAX_ITEM_PROTO_SOCKETS];
-    uint32 socketBonus;                                     // id from SpellItemEnchantment.dbc
-    uint32 GemProperties;                                   // id from GemProperties.dbc
     uint32 RequiredDisenchantSkill;
     float  ArmorDamageModifier;
     uint32  Duration;

@@ -788,7 +788,7 @@ enum PlayerLoginQueryIndex
 
     PLAYER_LOGIN_QUERY_LOAD_EQUIPMENT_SETS          = 20,
     PLAYER_LOGIN_QUERY_LOAD_ENTRY_POINT             = 21,
-    PLAYER_LOGIN_QUERY_LOAD_GLYPHS                  = 22,
+
     PLAYER_LOGIN_QUERY_LOAD_TALENTS                 = 23,
     PLAYER_LOGIN_QUERY_LOAD_ACCOUNT_DATA            = 24,
     PLAYER_LOGIN_QUERY_LOAD_SKILLS                  = 25,
@@ -1656,19 +1656,6 @@ class Player : public Unit, public GridObject<Player>
 		uint8 GetMostPointsTalentTree() const;
 		bool IsHealerTalentSpec() const;
 
-        void InitGlyphsForLevel();
-        void SetGlyphSlot(uint8 slot, uint32 slottype) { SetUInt32Value(PLAYER_FIELD_GLYPH_SLOTS_1 + slot, slottype); }
-        uint32 GetGlyphSlot(uint8 slot) const { return GetUInt32Value(PLAYER_FIELD_GLYPH_SLOTS_1 + slot); }
-        void SetGlyph(uint8 slot, uint32 glyph, bool save)
-        {
-            m_Glyphs[m_activeSpec][slot] = glyph;
-            SetUInt32Value(PLAYER_FIELD_GLYPHS_1 + slot, glyph);
-
-			if (save)
-				SetNeedToSaveGlyphs(true);
-        }
-        uint32 GetGlyph(uint8 slot) const { return m_Glyphs[m_activeSpec][slot]; }
-
         uint32 GetFreePrimaryProfessionPoints() const { return GetUInt32Value(PLAYER_CHARACTER_POINTS2); }
         void SetFreePrimaryProfessions(uint16 profs) { SetUInt32Value(PLAYER_CHARACTER_POINTS2, profs); }
         void InitPrimaryProfessions();
@@ -1739,15 +1726,6 @@ class Player : public Unit, public GridObject<Player>
         bool isResurrectRequestedBy(uint64 guid) const { return m_resurrectGUID && m_resurrectGUID == guid; }
         bool isResurrectRequested() const { return m_resurrectGUID != 0; }
         void ResurectUsingRequestData();
-
-        uint8 getCinematic() const
-        {
-            return m_cinematic;
-        }
-        void setCinematic(uint8 cine)
-        {
-            m_cinematic = cine;
-        }
 
         ActionButton* addActionButton(uint8 button, uint32 action, uint8 type);
         void removeActionButton(uint8 button);
@@ -2062,9 +2040,6 @@ class Player : public Unit, public GridObject<Player>
         void _ApplyItemBonuses(ItemTemplate const* proto, uint8 slot, bool apply, bool only_level_scale = false);
         void _ApplyWeaponDamage(uint8 slot, ItemTemplate const* proto, ScalingStatValuesEntry const* ssv, bool apply);
         void _ApplyAmmoBonuses();
-        bool EnchantmentFitsRequirements(uint32 enchantmentcondition, int8 slot);
-        void ToggleMetaGemsActive(uint8 exceptslot, bool apply);
-        void CorrectMetaGemEnchants(uint8 slot, bool apply);
         void InitDataForForm(bool reapplyMods = false);
 
         void ApplyItemEquipSpell(Item* item, bool apply, bool form_change = false);
@@ -2389,7 +2364,6 @@ class Player : public Unit, public GridObject<Player>
 
         void _LoadActions(PreparedQueryResult result);
         void _LoadAuras(PreparedQueryResult result, uint32 timediff);
-        void _LoadGlyphAuras();
         void _LoadInventory(PreparedQueryResult result, uint32 timeDiff);
         void _LoadMailInit(PreparedQueryResult resultUnread, PreparedQueryResult resultDelivery);
 		void _LoadMailAsynch(PreparedQueryResult result);
@@ -2409,7 +2383,6 @@ class Player : public Unit, public GridObject<Player>
         void _LoadDeclinedNames(PreparedQueryResult result);
         void _LoadEquipmentSets(PreparedQueryResult result);
         void _LoadEntryPointData(PreparedQueryResult result);
-        void _LoadGlyphs(PreparedQueryResult result);
         void _LoadTalents(PreparedQueryResult result);
 
         /*********************************************************/
@@ -2428,7 +2401,6 @@ class Player : public Unit, public GridObject<Player>
         void _SaveSkills(SQLTransaction& trans);
         void _SaveSpells(SQLTransaction& trans);
         void _SaveEquipmentSets(SQLTransaction& trans);
-        void _SaveGlyphs(SQLTransaction& trans);
         void _SaveTalents(SQLTransaction& trans);
         void _SaveStats(SQLTransaction& trans);
 		void _SaveCharacter(bool create, SQLTransaction& trans);
@@ -2491,8 +2463,6 @@ class Player : public Unit, public GridObject<Player>
         uint8 m_activeSpec;
         uint8 m_specsCount;
 
-        uint32 m_Glyphs[MAX_TALENT_SPECS][MAX_GLYPH_SLOT_INDEX];
-
         ActionButtonList m_actionButtons;
 
         float m_auraBaseMod[BASEMOD_END][MOD_END];
@@ -2524,8 +2494,6 @@ class Player : public Unit, public GridObject<Player>
 
         typedef std::list<Channel*> JoinedChannelsList;
         JoinedChannelsList m_channels;
-
-        uint8 m_cinematic;
 
         TradeData* m_trade;
 
@@ -2604,9 +2572,6 @@ class Player : public Unit, public GridObject<Player>
         RefundableItemsSet m_refundableItems;
         void SendRefundInfo(Item* item);
         void RefundItem(Item* item);
-
-        // know currencies are not removed at any point (0 displayed)
-        void AddKnownCurrency(uint32 itemId);
 
         void AdjustQuestReqItemCount(Quest const* quest, QuestStatusData& questStatusData);
 

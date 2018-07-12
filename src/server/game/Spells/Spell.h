@@ -305,7 +305,6 @@ class Spell
         void EffectStuck(SpellEffIndex effIndex);
         void EffectSummonPlayer(SpellEffIndex effIndex);
         void EffectActivateObject(SpellEffIndex effIndex);
-        void EffectApplyGlyph(SpellEffIndex effIndex);
         void EffectEnchantHeldItem(SpellEffIndex effIndex);
         void EffectSummonObject(SpellEffIndex effIndex);
         void EffectResurrect(SpellEffIndex effIndex);
@@ -360,11 +359,8 @@ class Spell
         void EffectCreateTamedPet(SpellEffIndex effIndex);
         void EffectDiscoverTaxi(SpellEffIndex effIndex);
         void EffectTitanGrip(SpellEffIndex effIndex);
-        void EffectEnchantItemPrismatic(SpellEffIndex effIndex);
-        void EffectPlayMusic(SpellEffIndex effIndex);
         void EffectSpecCount(SpellEffIndex effIndex);
         void EffectActivateSpec(SpellEffIndex effIndex);
-        void EffectPlaySound(SpellEffIndex effIndex);
         void EffectRemoveAura(SpellEffIndex effIndex);
         void EffectCastButtons(SpellEffIndex effIndex);
         void EffectRechargeManaGem(SpellEffIndex effIndex);

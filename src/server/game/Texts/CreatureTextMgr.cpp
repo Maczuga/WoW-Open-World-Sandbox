@@ -105,16 +105,8 @@ void CreatureTextMgr::LoadCreatureTexts()
         temp.probability    = fields[6].GetFloat();
         temp.emote          = Emote(fields[7].GetUInt32());
         temp.duration       = fields[8].GetUInt32();
-        temp.sound          = fields[9].GetUInt32();
-        temp.TextRange      = CreatureTextRange(fields[10].GetUInt8());
+        temp.TextRange      = CreatureTextRange(fields[9].GetUInt8());
 
-        if (temp.sound)
-        {
-            if (!sSoundEntriesStore.LookupEntry(temp.sound)){
-                sLog->outErrorDb("CreatureTextMgr: Entry %u, Group %u in table `creature_texts` has Sound %u but sound does not exist.", temp.entry, temp.group, temp.sound);
-                temp.sound = 0;
-            }
-        }
         if (!GetLanguageDescByID(temp.lang))
         {
             sLog->outErrorDb("CreatureTextMgr: Entry %u, Group %u in table `creature_texts` using Language %u but Language does not exist.", temp.entry, temp.group, uint32(temp.lang));
@@ -229,7 +221,7 @@ uint32 CreatureTextMgr::SendChat(Creature* source, uint8 textGroup, WorldObject 
 
     ChatMsg finalType = (msgType == CHAT_MSG_ADDON) ? iter->type : msgType;
     Language finalLang = (language == LANG_ADDON) ? iter->lang : language;
-    uint32 finalSound = sound ? sound : iter->sound;
+    uint32 finalSound = sound;
 
     if (range == TEXT_RANGE_NORMAL)
         range = iter->TextRange;

@@ -5398,14 +5398,6 @@ SpellCastResult Spell::CheckCast(bool strict)
                 }
                 break;
             }
-            case SPELL_EFFECT_APPLY_GLYPH:
-            {
-                uint32 glyphId = m_spellInfo->Effects[i].MiscValue;
-                if (GlyphPropertiesEntry const* gp = sGlyphPropertiesStore.LookupEntry(glyphId))
-                    if (m_caster->HasAura(gp->SpellId))
-                        return SPELL_FAILED_UNIQUE_GLYPH;
-                break;
-            }
             case SPELL_EFFECT_FEED_PET:
             {
                 if (m_caster->GetTypeId() != TYPEID_PLAYER)
@@ -6511,17 +6503,6 @@ SpellCastResult Spell::CheckItems()
                                 if (isItemUsable)
                                     return SPELL_FAILED_ON_USE_ENCHANT;
                                 break;
-                            case ITEM_ENCHANTMENT_TYPE_PRISMATIC_SOCKET:
-                            {
-                                uint32 numSockets = 0;
-                                for (uint32 socket = 0; socket < MAX_ITEM_PROTO_SOCKETS; ++socket)
-                                    if (targetItem->GetTemplate()->Socket[socket].Color)
-                                        ++numSockets;
-
-                                if (numSockets == MAX_ITEM_PROTO_SOCKETS || targetItem->GetEnchantmentId(PRISMATIC_ENCHANTMENT_SLOT))
-                                    return SPELL_FAILED_MAX_SOCKETS;
-                                break;
-                            }
                         }
                     }
                 }

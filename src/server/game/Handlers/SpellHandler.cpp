@@ -75,12 +75,6 @@ void WorldSession::HandleUseItemOpcode(WorldPacket& recvPacket)
 
     recvPacket >> bagIndex >> slot >> castCount >> spellId >> itemGUID >> glyphIndex >> castFlags;
 
-    if (glyphIndex >= MAX_GLYPH_SLOT_INDEX)
-    {
-        pUser->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
-        return;
-    }
-
     Item* pItem = pUser->GetUseableItemByPos(bagIndex, slot);
     if (!pItem)
     {

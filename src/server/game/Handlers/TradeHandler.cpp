@@ -106,7 +106,7 @@ void WorldSession::SendUpdateTrade(bool trader_data /*= true*/)
             data << uint64(item->GetUInt64Value(ITEM_FIELD_GIFTCREATOR));
                                                             // perm. enchantment and gems
             data << uint32(item->GetEnchantmentId(PERM_ENCHANTMENT_SLOT));
-            for (uint32 enchant_slot = SOCK_ENCHANTMENT_SLOT; enchant_slot < SOCK_ENCHANTMENT_SLOT+MAX_GEM_SOCKETS; ++enchant_slot)
+            for (uint32 enchant_slot = 2; enchant_slot < 2+MAX_GEM_SOCKETS; ++enchant_slot)
                 data << uint32(item->GetEnchantmentId(EnchantmentSlot(enchant_slot)));
                                                             // creator
             data << uint64(item->GetUInt64Value(ITEM_FIELD_CREATOR));

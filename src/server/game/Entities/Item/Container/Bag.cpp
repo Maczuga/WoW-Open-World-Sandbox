@@ -199,16 +199,6 @@ uint32 Bag::GetItemCount(uint32 item, Item* eItem) const
             count += pItem->GetCount();
     }
 
-    if (eItem && eItem->GetTemplate()->GemProperties)
-    {
-        for (uint32 i=0; i < GetBagSize(); ++i)
-        {
-            pItem = m_bagslot[i];
-            if (pItem && pItem != eItem && pItem->GetTemplate()->Socket[0].Color)
-                count += pItem->GetGemCountWithID(item);
-        }
-    }
-
     return count;
 }
 

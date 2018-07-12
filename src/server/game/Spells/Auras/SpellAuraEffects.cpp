@@ -1265,22 +1265,6 @@ void AuraEffect::HandleShapeshiftBoosts(Unit* target, bool apply) const
                     target->CastSpell(target, itr->first, true, NULL, this, target->GetGUID());
             }
 
-            // Also do it for Glyphs
-            for (uint32 i = 0; i < MAX_GLYPH_SLOT_INDEX; ++i)
-            {
-                if (uint32 glyphId = player->GetGlyph(i))
-                {
-                    if (GlyphPropertiesEntry const* glyph = sGlyphPropertiesStore.LookupEntry(glyphId))
-                    {
-                        SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(glyph->SpellId);
-                        if (!spellInfo || !spellInfo->HasAttribute(SpellAttr0(SPELL_ATTR0_PASSIVE | SPELL_ATTR0_HIDDEN_CLIENTSIDE)))
-                            continue;
-                        if (spellInfo->Stances & (1<<(GetMiscValue()-1)))
-                            target->CastSpell(target, glyph->SpellId, TriggerCastFlags(TRIGGERED_FULL_MASK&~(TRIGGERED_IGNORE_SHAPESHIFT|TRIGGERED_IGNORE_CASTER_AURASTATE)), NULL, this, target->GetGUID());
-                    }
-                }
-            }
-
             // Leader of the Pack
 			if (player->HasTalent(17007, player->GetActiveSpec()))
             {

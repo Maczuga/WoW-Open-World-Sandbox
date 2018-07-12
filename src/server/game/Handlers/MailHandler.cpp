@@ -692,20 +692,7 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket & recvData)
         return;
     }
 
-    // in mail template case we need create new item text
-    if (m->mailTemplateId)
-    {
-        MailTemplateEntry const* mailTemplateEntry = sMailTemplateStore.LookupEntry(m->mailTemplateId);
-        if (!mailTemplateEntry)
-        {
-            player->SendMailResult(mailId, MAIL_MADE_PERMANENT, MAIL_ERR_INTERNAL_ERROR);
-            return;
-        }
-
-        bodyItem->SetText(mailTemplateEntry->content[GetSessionDbcLocale()]);
-    }
-    else
-        bodyItem->SetText(m->body);
+    bodyItem->SetText(m->body);
 
     bodyItem->SetUInt32Value(ITEM_FIELD_CREATOR, m->sender);
     bodyItem->SetFlag(ITEM_FIELD_FLAGS, ITEM_FLAG_MAIL_TEXT_MASK);

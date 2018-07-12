@@ -157,11 +157,11 @@ enum EnchantmentSlot
 {
     PERM_ENCHANTMENT_SLOT           = 0,
     TEMP_ENCHANTMENT_SLOT           = 1,
-    SOCK_ENCHANTMENT_SLOT           = 2,
-    SOCK_ENCHANTMENT_SLOT_2         = 3,
-    SOCK_ENCHANTMENT_SLOT_3         = 4,
-    BONUS_ENCHANTMENT_SLOT          = 5,
-    PRISMATIC_ENCHANTMENT_SLOT      = 6,                    // added at apply special permanent enchantment
+    //SOCK_ENCHANTMENT_SLOT           = 2,
+    //SOCK_ENCHANTMENT_SLOT_2         = 3,
+    //SOCK_ENCHANTMENT_SLOT_3         = 4,
+    //BONUS_ENCHANTMENT_SLOT          = 5,
+    //PRISMATIC_ENCHANTMENT_SLOT      = 6,                    // added at apply special permanent enchantment
     MAX_INSPECTED_ENCHANTMENT_SLOT  = 7,
 
     PROP_ENCHANTMENT_SLOT_0         = 7,                    // used with RandomSuffix
@@ -253,13 +253,10 @@ class Item : public Object
 
         bool IsFitToSpellRequirements(SpellInfo const* spellInfo) const;
         bool IsLimitedToAnotherMapOrZone(uint32 cur_mapId, uint32 cur_zoneId) const;
-        bool GemsFitSockets() const;
 
         uint32 GetCount() const { return GetUInt32Value(ITEM_FIELD_STACK_COUNT); }
         void SetCount(uint32 value) { SetUInt32Value(ITEM_FIELD_STACK_COUNT, value); }
         uint32 GetMaxStackCount() const { return GetTemplate()->GetMaxStackSize(); }
-        uint8 GetGemCountWithID(uint32 GemID) const;
-        uint8 GetGemCountWithLimitCategory(uint32 limitCategory) const;
         InventoryResult CanBeMergedPartlyWith(ItemTemplate const* proto) const;
 
         uint8 GetSlot() const {return m_slot;}
@@ -291,8 +288,6 @@ class Item : public Object
 
         std::string const& GetText() const { return m_text; }
         void SetText(std::string const& text) { m_text = text; }
-
-        void SendUpdateSockets();
 
         void SendTimeUpdate(Player* owner);
         void UpdateDuration(Player* owner, uint32 diff);
