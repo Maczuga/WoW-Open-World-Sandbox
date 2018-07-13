@@ -20,11 +20,9 @@
 
 void AddSpellsScripts();
 void AddCommandsScripts();
-void AddPetScripts();
 
 void AddScripts()
 {
     AddSpellsScripts();
     AddCommandsScripts();
-    AddPetScripts();
 }

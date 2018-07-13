@@ -25,7 +25,6 @@
 #include "Log.h"
 #include "MapReference.h"
 #include "Player.h"
-#include "CreatureTextMgr.h"
 
 //Disable CreatureAI when charmed
 void CreatureAI::OnCharmed(bool /*apply*/)
@@ -37,11 +36,6 @@ void CreatureAI::OnCharmed(bool /*apply*/)
 
 AISpellInfoType* UnitAI::AISpellInfo;
 AISpellInfoType* GetAISpellInfo(uint32 i) { return &CreatureAI::AISpellInfo[i]; }
-
-void CreatureAI::Talk(uint8 id, WorldObject const* whisperTarget /*= NULL*/)
-{
-    sCreatureTextMgr->SendChat(me, id, whisperTarget);
-}
 
 // scripts does not take care about MoveInLineOfSight loops
 // MoveInLineOfSight can be called inside another MoveInLineOfSight and cause stack overflow

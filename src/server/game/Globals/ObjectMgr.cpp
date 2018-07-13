@@ -1085,166 +1085,6 @@ void ObjectMgr::LoadCreatureModelInfo()
     sLog->outString();
 }
 
-void ObjectMgr::LoadLinkedRespawn()
-{
-    uint32 oldMSTime = getMSTime();
-
-    _linkedRespawnStore.clear();
-    //                                                 0        1          2
-    QueryResult result = WorldDatabase.Query("SELECT guid, linkedGuid, linkType FROM linked_respawn ORDER BY guid ASC");
-
-    if (!result)
-    {
-        sLog->outErrorDb(">> Loaded 0 linked respawns. DB table `linked_respawn` is empty.");
-        sLog->outString();
-        return;
-    }
-
-    do
-    {
-        Field* fields = result->Fetch();
-
-        uint32 guidLow = fields[0].GetUInt32();
-        uint32 linkedGuidLow = fields[1].GetUInt32();
-        uint8  linkType = fields[2].GetUInt8();
-
-        uint64 guid = 0, linkedGuid = 0;
-        bool error = false;
-        switch (linkType)
-        {
-            case CREATURE_TO_CREATURE:
-            {
-                const CreatureData* slave = GetCreatureData(guidLow);
-                if (!slave)
-                {
-                    sLog->outErrorDb("Couldn't get creature data for GUIDLow %u", guidLow);
-                    error = true;
-                    break;
-                }
-
-                const CreatureData* master = GetCreatureData(linkedGuidLow);
-                if (!master)
-                {
-                    sLog->outErrorDb("Couldn't get creature data for GUIDLow %u", linkedGuidLow);
-                    error = true;
-                    break;
-                }
-
-                guid = MAKE_NEW_GUID(guidLow, slave->id, HIGHGUID_UNIT);
-                linkedGuid = MAKE_NEW_GUID(linkedGuidLow, master->id, HIGHGUID_UNIT);
-                break;
-            }
-            case CREATURE_TO_GO:
-            {
-                const CreatureData* slave = GetCreatureData(guidLow);
-                if (!slave)
-                {
-                    sLog->outErrorDb("Couldn't get creature data for GUIDLow %u", guidLow);
-                    error = true;
-                    break;
-                }
-
-                const GameObjectData* master = GetGOData(linkedGuidLow);
-                if (!master)
-                {
-                    sLog->outErrorDb("Couldn't get gameobject data for GUIDLow %u", linkedGuidLow);
-                    error = true;
-                    break;
-                }
-
-                guid = MAKE_NEW_GUID(guidLow, slave->id, HIGHGUID_UNIT);
-                linkedGuid = MAKE_NEW_GUID(linkedGuidLow, master->id, HIGHGUID_GAMEOBJECT);
-                break;
-            }
-            case GO_TO_GO:
-            {
-                const GameObjectData* slave = GetGOData(guidLow);
-                if (!slave)
-                {
-                    sLog->outErrorDb("Couldn't get gameobject data for GUIDLow %u", guidLow);
-                    error = true;
-                    break;
-                }
-
-                const GameObjectData* master = GetGOData(linkedGuidLow);
-                if (!master)
-                {
-                    sLog->outErrorDb("Couldn't get gameobject data for GUIDLow %u", linkedGuidLow);
-                    error = true;
-                    break;
-                }
-
-                guid = MAKE_NEW_GUID(guidLow, slave->id, HIGHGUID_GAMEOBJECT);
-                linkedGuid = MAKE_NEW_GUID(linkedGuidLow, master->id, HIGHGUID_GAMEOBJECT);
-                break;
-            }
-            case GO_TO_CREATURE:
-            {
-                const GameObjectData* slave = GetGOData(guidLow);
-                if (!slave)
-                {
-                    sLog->outErrorDb("Couldn't get gameobject data for GUIDLow %u", guidLow);
-                    error = true;
-                    break;
-                }
-
-                const CreatureData* master = GetCreatureData(linkedGuidLow);
-                if (!master)
-                {
-                    sLog->outErrorDb("Couldn't get creature data for GUIDLow %u", linkedGuidLow);
-                    error = true;
-                    break;
-                }
-
-                guid = MAKE_NEW_GUID(guidLow, slave->id, HIGHGUID_GAMEOBJECT);
-                linkedGuid = MAKE_NEW_GUID(linkedGuidLow, master->id, HIGHGUID_UNIT);
-                break;
-            }
-        }
-
-        if (!error)
-            _linkedRespawnStore[guid] = linkedGuid;
-    }
-    while (result->NextRow());
-
-    sLog->outString(">> Loaded " UI64FMTD " linked respawns in %u ms", uint64(_linkedRespawnStore.size()), GetMSTimeDiffToNow(oldMSTime));
-    sLog->outString();
-}
-
-bool ObjectMgr::SetCreatureLinkedRespawn(uint32 guidLow, uint32 linkedGuidLow)
-{
-    if (!guidLow)
-        return false;
-
-    const CreatureData* master = GetCreatureData(guidLow);
-    uint64 guid = MAKE_NEW_GUID(guidLow, master->id, HIGHGUID_UNIT);
-
-    if (!linkedGuidLow) // we're removing the linking
-    {
-        _linkedRespawnStore.erase(guid);
-        PreparedStatement *stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_CRELINKED_RESPAWN);
-        stmt->setUInt32(0, guidLow);
-        WorldDatabase.Execute(stmt);
-        return true;
-    }
-
-    const CreatureData* slave = GetCreatureData(linkedGuidLow);
-    if (!slave)
-    {
-        //sLog->outError("Creature '%u' linking to non-existent creature '%u'.", guidLow, linkedGuidLow);
-        return false;
-    }
-
-    uint64 linkedGuid = MAKE_NEW_GUID(linkedGuidLow, slave->id, HIGHGUID_UNIT);
-
-    _linkedRespawnStore[guid] = linkedGuid;
-    PreparedStatement *stmt = WorldDatabase.GetPreparedStatement(WORLD_REP_CREATURE_LINKED_RESPAWN);
-    stmt->setUInt32(0, guidLow);
-    stmt->setUInt32(1, linkedGuidLow);
-    WorldDatabase.Execute(stmt);
-    return true;
-}
-
 void ObjectMgr::LoadTempSummons()
 {
     uint32 oldMSTime = getMSTime();
@@ -4339,12 +4179,6 @@ void ObjectMgr::LoadScripts(ScriptsType type)
                         tableName.c_str(), tmp.Talk.TextID, tmp.id);
                     continue;
                 }
-                if (tmp.Talk.TextID < MIN_DB_SCRIPT_STRING_ID || tmp.Talk.TextID >= MAX_DB_SCRIPT_STRING_ID)
-                {
-                    sLog->outErrorDb("Table `%s` has out of range text id (dataint = %i expected %u-%u) in SCRIPT_COMMAND_TALK for script id %u",
-                        tableName.c_str(), tmp.Talk.TextID, MIN_DB_SCRIPT_STRING_ID, MAX_DB_SCRIPT_STRING_ID, tmp.id);
-                    continue;
-                }
 
                 break;
             }
@@ -7117,52 +6951,27 @@ void ObjectMgr::LoadGameObjectForQuests()
     sLog->outString();
 }
 
-bool ObjectMgr::LoadTrinityStrings(const char* table, int32 min_value, int32 max_value)
+bool ObjectMgr::LoadTrinityStrings()
 {
     uint32 oldMSTime = getMSTime();
 
-    int32 start_value = min_value;
-    int32 end_value   = max_value;
-    // some string can have negative indexes range
-    if (start_value < 0)
-    {
-        if (end_value >= start_value)
-        {
-            sLog->outErrorDb("Table '%s' attempt loaded with invalid range (%d - %d), strings not loaded.", table, min_value, max_value);
-            return false;
-        }
-
-        // real range (max+1, min+1) exaple: (-10, -1000) -> -999...-10+1
-        std::swap(start_value, end_value);
-        ++start_value;
-        ++end_value;
-    }
-    else
-    {
-        if (start_value >= end_value)
-        {
-            sLog->outErrorDb("Table '%s' attempt loaded with invalid range (%d - %d), strings not loaded.", table, min_value, max_value);
-            return false;
-        }
-    }
+    uint32 min_value = MIN_TRINITY_STRING_ID;
+    uint32 max_value = MAX_TRINITY_STRING_ID;
 
     // cleanup affected map part for reloading case
     for (TrinityStringLocaleContainer::iterator itr = _trinityStringLocaleStore.begin(); itr != _trinityStringLocaleStore.end();)
     {
-        if (itr->first >= start_value && itr->first < end_value)
+        if (itr->first >= min_value && itr->first < max_value)
             _trinityStringLocaleStore.erase(itr++);
         else
             ++itr;
     }
 
-    QueryResult result = WorldDatabase.PQuery("SELECT entry, content_default FROM %s", table);
+    QueryResult result = WorldDatabase.Query("SELECT entry, content_default FROM trinity_string");
 
     if (!result)
     {
-        if (min_value == MIN_TRINITY_STRING_ID)              // error only in case internal strings
-            sLog->outErrorDb(">> Loaded 0 trinity strings. DB table `%s` is empty. Cannot continue.", table);
-        else
-            sLog->outString(">> Loaded 0 string templates. DB table `%s` is empty.", table);
+        sLog->outErrorDb(">> Loaded 0 trinity strings. DB table `trinity_string` is empty. Cannot continue.");
         sLog->outString();
         return false;
     }
@@ -7173,16 +6982,16 @@ bool ObjectMgr::LoadTrinityStrings(const char* table, int32 min_value, int32 max
     {
         Field* fields = result->Fetch();
 
-        int32 entry = fields[0].GetInt32();
+        uint32 entry = fields[0].GetUInt32();
 
         if (entry == 0)
         {
-            sLog->outErrorDb("Table `%s` contain reserved entry 0, ignored.", table);
+            sLog->outErrorDb("Table `trinity_string` contain reserved entry 0, ignored.");
             continue;
         }
-        else if (entry < start_value || entry >= end_value)
+        else if (entry < min_value || entry >= max_value)
         {
-            sLog->outErrorDb("Table `%s` contain entry %i out of allowed range (%d - %d), ignored.", table, entry, min_value, max_value);
+            sLog->outErrorDb("Table `trinity_string` contain entry %i out of allowed range (%d - %d), ignored.", entry, min_value, max_value);
             continue;
         }
 
@@ -7190,18 +6999,14 @@ bool ObjectMgr::LoadTrinityStrings(const char* table, int32 min_value, int32 max
 
         if (!data.Content.empty())
         {
-            sLog->outErrorDb("Table `%s` contain data for already loaded entry  %i (from another table?), ignored.", table, entry);
+            sLog->outErrorDb("Table `trinity_string` contain data for already loaded entry  %i (from another table?), ignored.", entry);
             continue;
         }
 
         data.Content = fields[1].GetString();
     } while (result->NextRow());
 
-    if (min_value == MIN_TRINITY_STRING_ID)
-        sLog->outString(">> Loaded %u Trinity strings from table %s in %u ms", count, table, GetMSTimeDiffToNow(oldMSTime));
-    else
-        sLog->outString(">> Loaded %u string templates from %s in %u ms", count, table, GetMSTimeDiffToNow(oldMSTime));
-
+    sLog->outString(">> Loaded %u Trinity strings from table trinity_string in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
     sLog->outString();
     return true;
 }
@@ -7997,36 +7802,6 @@ void ObjectMgr::CheckScripts(ScriptsType type, std::set<int32>& ids)
             }
         }
     }
-}
-
-void ObjectMgr::LoadDbScriptStrings()
-{
-    LoadTrinityStrings("db_script_string", MIN_DB_SCRIPT_STRING_ID, MAX_DB_SCRIPT_STRING_ID);
-
-    std::set<int32> ids;
-
-    for (int32 i = MIN_DB_SCRIPT_STRING_ID; i < MAX_DB_SCRIPT_STRING_ID; ++i)
-        if (GetTrinityStringLocale(i))
-            ids.insert(i);
-
-    for (int type = SCRIPTS_FIRST; type < SCRIPTS_LAST; ++type)
-        CheckScripts(ScriptsType(type), ids);
-
-    for (std::set<int32>::const_iterator itr = ids.begin(); itr != ids.end(); ++itr)
-        sLog->outErrorDb("Table `db_script_string` has unused string id  %u", *itr);
-}
-
-bool LoadTrinityStrings(const char* table, int32 start_value, int32 end_value)
-{
-    // MAX_DB_SCRIPT_STRING_ID is max allowed negative value for scripts (scrpts can use only more deep negative values
-    // start/end reversed for negative values
-    if (start_value > MAX_DB_SCRIPT_STRING_ID || end_value >= start_value)
-    {
-        sLog->outErrorDb("Table '%s' load attempted with range (%d - %d) reserved by Trinity, strings not loaded.", table, start_value, end_value+1);
-        return false;
-    }
-
-    return sObjectMgr->LoadTrinityStrings(table, start_value, end_value);
 }
 
 CreatureBaseStats const* ObjectMgr::GetCreatureBaseStats(uint8 level, uint8 unitClass)

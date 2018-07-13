@@ -21,10 +21,7 @@ Also:
 - May be not working on other DBC files than enUS due to removed DBC locale system (as the plan is to avoid using DBC files at all costs)
 
 TODO: 
-- remove linked respawn (used only in instancable maps)
-- remove gems from ItemTemplate/Proto
 - remove MailTemplate from QuestTemplate
-- remove CreatureText support (texts will be stored in core)
 - remove who list (and implement nearby Actors command/listing)
 - Playerable NPCs
 - Name generation for units (first, 2nd* and last name)

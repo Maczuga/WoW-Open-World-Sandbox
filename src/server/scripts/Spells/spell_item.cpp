@@ -559,50 +559,6 @@ class spell_item_toxic_wasteling : public SpellScriptLoader
         }
 };
 
-class spell_item_lil_xt : public SpellScriptLoader
-{
-    public:
-        spell_item_lil_xt() : SpellScriptLoader("spell_item_lil_xt") {}
-
-        class spell_item_lil_xt_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_item_lil_xt_SpellScript);
-
-            void HandleScriptEffect(SpellEffIndex effIndex)
-            {
-                PreventHitDefaultEffect(effIndex);
-                Creature* target = GetHitCreature();
-                if (!target)
-                    return;
-                GetCaster()->CastSpell(target, GetEffectValue(), false);
-            }
-
-			void HandleDummy(SpellEffIndex effIndex)
-            {
-                PreventHitDefaultEffect(effIndex);
-                Creature* target = GetHitCreature();
-                if (!target)
-                    return;
-				if (GetCaster()->GetTypeId() == TYPEID_UNIT && GetCaster()->ToCreature()->AI())
-					GetCaster()->ToCreature()->AI()->Talk(2);
-                target->DespawnOrUnsummon(500);
-            }
-
-            void Register()
-            {
-				if (m_scriptSpellId == 76098)
-					OnEffectHitTarget += SpellEffectFn(spell_item_lil_xt_SpellScript::HandleScriptEffect, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
-				else
-					OnEffectHitTarget += SpellEffectFn(spell_item_lil_xt_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_DUMMY);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_item_lil_xt_SpellScript();
-        }
-};
-
 class spell_item_essence_of_life : public SpellScriptLoader
 {
     public:
@@ -3905,7 +3861,6 @@ void AddSC_item_spell_scripts()
 	new spell_item_lil_phylactery();
 	new spell_item_shifting_naaru_silver();
 	new spell_item_toxic_wasteling();
-	new spell_item_lil_xt();
 	new spell_item_essence_of_life();
 	new spell_item_crazy_alchemists_potion();
 	new spell_item_skull_of_impeding_doom();

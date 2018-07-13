@@ -1392,13 +1392,6 @@ public:
             return false;
         }
 
-        if (!sObjectMgr->SetCreatureLinkedRespawn(creature->GetDBTableGUIDLow(), linkguid))
-        {
-            handler->PSendSysMessage("Selected creature can't link with guid '%u'", linkguid);
-            handler->SetSentErrorMessage(true);
-            return false;
-        }
-
         handler->PSendSysMessage("LinkGUID '%u' added to creature with DBTableGUID: '%u'", linkguid, creature->GetDBTableGUIDLow());
         return true;
     }

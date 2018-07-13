@@ -29,7 +29,6 @@
 #include "SpellAuraEffects.h"
 #include "GridNotifiers.h"
 #include "MapManager.h"
-#include "CreatureTextMgr.h"
 #include "CellImpl.h"
 
 // Ours
@@ -2139,49 +2138,6 @@ class spell_q9452_cast_net: public SpellScriptLoader
         }
 };
 
-enum HodirsHelm
-{
-    SAY_1               = 1,
-    SAY_2               = 2,
-    NPC_KILLCREDIT      = 30210, // Hodir's Helm KC Bunny
-    NPC_ICE_SPIKE_BUNNY = 30215
-};
-
-class spell_q12987_read_pronouncement : public SpellScriptLoader
-{
-public:
-    spell_q12987_read_pronouncement() : SpellScriptLoader("spell_q12987_read_pronouncement") { }
-
-    class spell_q12987_read_pronouncement_AuraScript : public AuraScript
-    {
-        PrepareAuraScript(spell_q12987_read_pronouncement_AuraScript);
-
-        void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
-        {
-            // player must cast kill credit and do emote text, according to sniff
-            if (Player* target = GetTarget()->ToPlayer())
-            {
-                if (Creature* trigger = target->FindNearestCreature(NPC_ICE_SPIKE_BUNNY, 25.0f))
-                {
-                    sCreatureTextMgr->SendChat(trigger, SAY_1, target, CHAT_MSG_ADDON, LANG_ADDON, TEXT_RANGE_NORMAL, 0, TEAM_NEUTRAL, false, target);
-                    target->KilledMonsterCredit(NPC_KILLCREDIT, 0);
-                    sCreatureTextMgr->SendChat(trigger, SAY_2, target, CHAT_MSG_ADDON, LANG_ADDON, TEXT_RANGE_NORMAL, 0, TEAM_NEUTRAL, false, target);
-                }
-            }
-        }
-
-        void Register()
-        {
-            AfterEffectApply += AuraEffectApplyFn(spell_q12987_read_pronouncement_AuraScript::OnApply, EFFECT_0, SPELL_AURA_NONE, AURA_EFFECT_HANDLE_REAL);
-        }
-    };
-
-    AuraScript* GetAuraScript() const
-    {
-        return new spell_q12987_read_pronouncement_AuraScript();
-    }
-};
-
 enum LeaveNothingToChance
 {
     NPC_UPPER_MINE_SHAFT            = 27436,
@@ -2631,63 +2587,6 @@ class spell_q13291_q13292_q13239_q13261_armored_decoy_summon_skytalon : public S
         SpellScript* GetSpellScript() const
         {
             return new spell_q13291_q13292_q13239_q13261_armored_decoy_summon_skytalon_SpellScript();
-        }
-};
-
-enum BearFlankMaster
-{
-    SPELL_BEAR_FLANK_MASTER = 56565,
-    SPELL_CREATE_BEAR_FLANK = 56566,
-    SPELL_BEAR_FLANK_FAIL = 56569
-};
-
-class spell_q13011_bear_flank_master : public SpellScriptLoader
-{
-    public:
-        spell_q13011_bear_flank_master() : SpellScriptLoader("spell_q13011_bear_flank_master") { }
-
-        class spell_q13011_bear_flank_master_SpellScript : public SpellScript
-        {
-            PrepareSpellScript(spell_q13011_bear_flank_master_SpellScript);
-
-            bool Validate(SpellInfo const* /*spellInfo*/)
-            {
-                if (!sSpellMgr->GetSpellInfo(SPELL_BEAR_FLANK_MASTER) ||
-                    !sSpellMgr->GetSpellInfo(SPELL_CREATE_BEAR_FLANK))
-                    return false;
-                return true;
-            }
-
-            bool Load()
-            {
-                return GetCaster()->GetTypeId() == TYPEID_UNIT;
-            }
-
-            void HandleScript(SpellEffIndex /*effIndex*/)
-            {
-                bool failed = RAND(0, 1); // 50% chance
-                Creature* creature = GetCaster()->ToCreature();
-                if (Player* player = GetHitPlayer())
-                {
-                    if (failed)
-                    {
-                        player->CastSpell(creature, SPELL_BEAR_FLANK_FAIL);
-                        creature->AI()->Talk(0, player);
-                    }
-                    else
-                        player->CastSpell(player, SPELL_CREATE_BEAR_FLANK);
-                }
-            }
-
-            void Register()
-            {
-                OnEffectHitTarget += SpellEffectFn(spell_q13011_bear_flank_master_SpellScript::HandleScript, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
-            }
-        };
-
-        SpellScript* GetSpellScript() const
-        {
-            return new spell_q13011_bear_flank_master_SpellScript();
         }
 };
 
@@ -3163,7 +3062,6 @@ void AddSC_quest_spell_scripts()
     new spell_q13280_13283_plant_battle_standard();
     new spell_q14112_14145_chum_the_water();
     new spell_q9452_cast_net();
-    new spell_q12987_read_pronouncement();
     new spell_q12277_wintergarde_mine_explosion();
     new spell_q12066_bunny_kill_credit();
     new spell_q12735_song_of_cleansing();
@@ -3176,7 +3074,6 @@ void AddSC_quest_spell_scripts()
     new spell_q12730_quenching_mist();
     new spell_q13291_q13292_q13239_q13261_frostbrood_skytalon_grab_decoy();
     new spell_q13291_q13292_q13239_q13261_armored_decoy_summon_skytalon();
-    new spell_q13011_bear_flank_master();
     new spell_q12690_burst_at_the_seams();
     new spell_q12308_escape_from_silverbrook_summon_worgen();
     new spell_q12308_escape_from_silverbrook();

@@ -63,7 +63,6 @@
 #include "DisableMgr.h"
 #include "ScriptMgr.h"
 #include "WeatherMgr.h"
-#include "CreatureTextMgr.h"
 #include "Channel.h"
 #include "ChannelMgr.h"
 #include "LootItemStorage.h"
@@ -1272,9 +1271,6 @@ void World::SetInitialWorldSettings()
     sLog->outString("Loading GameObject Addon Data...");
     sObjectMgr->LoadGameObjectAddons();                          // must be after LoadGameObjectTemplate() and LoadGameobjects()
 
-    sLog->outString("Loading Creature Linked Respawn...");
-    sObjectMgr->LoadLinkedRespawn();                             // must be after LoadCreatures(), LoadGameObjects()
-
     sLog->outString("Loading Weather Data...");
     WeatherMgr::LoadWeatherData();
 
@@ -1427,14 +1423,8 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadEventScripts();                              // must be after load Creature/Gameobject(Template/Data)
     sObjectMgr->LoadWaypointScripts();
 
-    sLog->outString("Loading Scripts text locales...");      // must be after Load*Scripts calls
-    sObjectMgr->LoadDbScriptStrings();
-
     sLog->outString("Loading spell script names...");
     sObjectMgr->LoadSpellScriptNames();
-
-    sLog->outString("Loading Creature Texts...");
-    sCreatureTextMgr->LoadCreatureTexts();
 
     sLog->outString("Initializing Scripts...");
     sScriptMgr->Initialize();

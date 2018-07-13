@@ -23,7 +23,6 @@ Category: commandscripts
 EndScriptData */
 
 #include "Chat.h"
-#include "CreatureTextMgr.h"
 #include "DisableMgr.h"
 #include "Language.h"
 #include "MapManager.h"
@@ -62,9 +61,7 @@ public:
             { "command",                      SEC_ADMINISTRATOR, true,  &HandleReloadCommandCommand,                    "" },
             { "conditions",                   SEC_ADMINISTRATOR, true,  &HandleReloadConditions,                        "" },
             { "config",                       SEC_ADMINISTRATOR, true,  &HandleReloadConfigCommand,                     "" },
-            { "creature_text",                SEC_ADMINISTRATOR, true,  &HandleReloadCreatureText,                      "" },
             { "creature_questender",          SEC_ADMINISTRATOR, true,  &HandleReloadCreatureQuestEnderCommand,         "" },
-            { "creature_linked_respawn",      SEC_GAMEMASTER,    true,  &HandleReloadLinkedRespawnCommand,              "" },
             { "creature_loot_template",       SEC_ADMINISTRATOR, true,  &HandleReloadLootTemplatesCreatureCommand,      "" },
             { "creature_onkill_reputation",   SEC_ADMINISTRATOR, true,  &HandleReloadOnKillReputationCommand,           "" },
             { "creature_queststarter",        SEC_ADMINISTRATOR, true,  &HandleReloadCreatureQuestStarterCommand,       "" },
@@ -204,7 +201,6 @@ public:
         HandleReloadEventScriptsCommand(handler, "a");
         HandleReloadSpellScriptsCommand(handler, "a");
         handler->SendGlobalGMSysMessage("DB tables `*_scripts` reloaded.");
-        HandleReloadDbScriptStringCommand(handler, "a");
         HandleReloadWpScriptsCommand(handler, "a");
         HandleReloadWpCommand(handler, "a");
         return true;
@@ -329,14 +325,6 @@ public:
         sLog->outString("Loading Quests Relations... (`creature_queststarter`)");
         sObjectMgr->LoadCreatureQuestStarters();
         handler->SendGlobalGMSysMessage("DB table `creature_queststarter` reloaded.");
-        return true;
-    }
-
-    static bool HandleReloadLinkedRespawnCommand(ChatHandler* handler, const char* /*args*/)
-    {
-        sLog->outString("Loading Linked Respawns... (`creature_linked_respawn`)");
-        sObjectMgr->LoadLinkedRespawn();
-        handler->SendGlobalGMSysMessage("DB table `creature_linked_respawn` (creature linked respawns) reloaded.");
         return true;
     }
 
@@ -801,14 +789,6 @@ public:
         return true;
     }
 
-    static bool HandleReloadDbScriptStringCommand(ChatHandler* handler, const char* /*args*/)
-    {
-        sLog->outString("Re-Loading Script strings from `db_script_string`...");
-        sObjectMgr->LoadDbScriptStrings();
-        handler->SendGlobalGMSysMessage("DB table `db_script_string` reloaded.");
-        return true;
-    }
-
     static bool HandleReloadGameGraveyardZoneCommand(ChatHandler* handler, const char* /*args*/)
     {
         sLog->outString("Re-Loading Graveyard-zone links...");
@@ -846,14 +826,6 @@ public:
         sLog->outString("Re-Loading Conditions...");
         sConditionMgr->LoadConditions(true);
         handler->SendGlobalGMSysMessage("Conditions reloaded.");
-        return true;
-    }
-
-    static bool HandleReloadCreatureText(ChatHandler* handler, const char* /*args*/)
-    {
-        sLog->outString("Re-Loading Creature Texts...");
-        sCreatureTextMgr->LoadCreatureTexts();
-        handler->SendGlobalGMSysMessage("Creature Texts reloaded.");
         return true;
     }
 
